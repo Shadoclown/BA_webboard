@@ -56,7 +56,7 @@ const LoginPage = ({ isLogin }) => {
         email: user.email
       };
       isLogin(userData);
-      navigate('/profile');
+      navigate('/browse');
       
     } catch (err) {
       console.error('Login error:', err);

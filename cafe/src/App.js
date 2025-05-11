@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import LoginPage from './component/LoginPage';
 import SignUpPage from './component/SignUpPage';
 import ProfilePage from './component/ProfilePage';
+import Browse from './component/Browse';
 
 function App() {
   const [checklogin, setchecklogin] = useState(false);
@@ -25,9 +26,10 @@ function App() {
       <BrowserRouter>
         <Navbar checklogin={checklogin} userData={User} checklogout={handleLogout}/>
         <Routes>
+          <Route path="/browse" element={<Browse />} />
           <Route path="/login" element={<LoginPage isLogin={handleLogin}/>} />
           <Route path="/signup" element={<SignUpPage />} />
-          <Route path="/profile" element={<ProfilePage />} /> 
+          <Route path="/profile" element={<ProfilePage userData={User} />} /> 
         </Routes>
       </BrowserRouter>
     </div>

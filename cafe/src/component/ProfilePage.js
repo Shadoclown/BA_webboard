@@ -4,18 +4,17 @@ import supabase from './connect';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import '../style/ProfilePage.css';
 
-const ProfilePage = () => {
+const ProfilePage = ({ userData }) => {
   const navigate = useNavigate();
-  const location = useLocation();
-  const { 
-    user_id,
-    username: initialUsername = 'User',
-    email = 'User'
-  } = location.state || {};
+
+  const userId = userData.user_id;
+  const username = userData.username;
+  const email = userData.email;
+
+  const [loading, setLoading] = useState(false);
+
   
-  const [username, setUsername] = useState(initialUsername);
   const [posts, setPosts] = useState([]);
-  const [loading, setLoading] = useState(true);
   
   useEffect(() => {
     // Check for authenticated user
@@ -23,7 +22,7 @@ const ProfilePage = () => {
       try {
         setLoading(true);
         
-        if (!user_id) {
+        if (!userId) {
           console.error('No user ID available');
           setLoading(false);
           return;
@@ -33,7 +32,7 @@ const ProfilePage = () => {
         const { data: data, error: userError } = await supabase
           .from('users')
           .select('*')
-          .eq('user_id', user_id)
+          .eq('user_id', userId)
           .single();
           
         if (userError && userError.code !== 'PGRST116') {
@@ -44,7 +43,7 @@ const ProfilePage = () => {
         const { data: postsData, error: postsError } = await supabase
           .from('posts')
           .select('*')
-          .eq('user_id', user_id)
+          .eq('user_id', userId)
           .order('post_id', { ascending: false });
           
         if (postsError) throw postsError;
@@ -58,7 +57,7 @@ const ProfilePage = () => {
     };
     
     fetchUserData();
-  }, [user_id, email]);
+  }, [userId, email]);
   
   const handleCreatePost = () => {
     // Navigate to create post page
