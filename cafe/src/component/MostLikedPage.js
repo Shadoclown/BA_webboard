@@ -88,7 +88,7 @@ const MostLikedPage = () => {
 
   return (
     <div className="most-liked-container">
-      <h1 className="explore-title">Explore Cafes and Restaurants</h1>
+      {/* <h1 className="explore-title">Explore Cafes and Restaurants</h1>
       
       <div className="tabs-container">
         <div 
@@ -109,7 +109,7 @@ const MostLikedPage = () => {
         >
           Top 5
         </div>
-      </div>
+      </div> */}
       
       {loading ? (
         <div className="loading">Loading...</div>

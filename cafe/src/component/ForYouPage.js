@@ -108,7 +108,7 @@ const ForYouPage = () => {
 
   return (
     <div className="for-you-container">
-      <h1 className="explore-title">Explore Cafes and Restaurants</h1>
+      {/* <h1 className="explore-title">Explore Cafes and Restaurants</h1>
       
       <div className="tabs-container">
         <div 
@@ -129,7 +129,7 @@ const ForYouPage = () => {
         >
           Top 5
         </div>
-      </div>
+      </div> */}
 
       {loading ? (
         <div className="loading">Loading...</div>

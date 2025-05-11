@@ -21,17 +21,16 @@
   padding: 8px;
 }
 
-.tab {
+.active-tab, .not-active-tab {
   padding: 12px 40px;
   cursor: pointer;
   border-radius: 8px;
   font-weight: 500;
   text-align: center;
-  transition: background-color 0.3s;
 }
 
-.tab.active {
-  background-color: white;
+.active-tab {
+  background-color: rgb(255, 255, 255);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
@@ -46,7 +45,7 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 25px;
-  align-items: stretch; /* Ensures rows stretch to match tallest item */
+  align-items: stretch;
 }
 
 .post-card {
@@ -54,10 +53,10 @@
   padding: 20px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
   transition: transform 0.2s;
-  background-color: #f0f8ff; /* Light blue background for all posts */
+  background-color: #f0f8ff;
   display: flex;
   flex-direction: column;
-  height: 100%; /* Ensure all cards are the same height */
+  height: 100%;
 }
 
 .post-card:nth-child(2) { background-color: #f5edff; }

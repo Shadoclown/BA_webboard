@@ -33,7 +33,7 @@ const Navbar = ({ checklogin, userData, checklogout}) => {
                             </span>
                             <ul className="dropdown-menu">
                                 <li>
-                                    <Link to="/for-you" className="dropdown-link">
+                                    <Link to="/explore" className="dropdown-link">
                                         For You
                                     </Link>
                                 </li>

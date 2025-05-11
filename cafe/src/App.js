@@ -9,6 +9,7 @@ import ForYouPage from './component/ForYouPage';
 import MostLikedPage from './component/MostLikedPage';
 import Top5Page from './component/Top5Page';
 import Regions from './component/Regions';
+import ExplorePage from './component/ExplorePage';
 
 function App() {
   const [checklogin, setchecklogin] = useState(false);
@@ -33,12 +34,11 @@ function App() {
           <Route path="/login" element={<LoginPage isLogin={handleLogin}/>} />
           <Route path="/signup" element={<SignUpPage />} />
           <Route path="/profile" element={<ProfilePage userData={User} />} /> 
-          <Route path="/for-you" element={<ForYouPage />} />
+          {/* <Route path="/for-you" element={<ForYouPage />} />
           <Route path="/most-like" element={<MostLikedPage />} />
-          <Route path="/top-5" element={<Top5Page />} />
-          {/* Add route for region-specific pages */}
+          <Route path="/top-5" element={<Top5Page />} /> */}
+          <Route path="/explore" element={<ExplorePage />} />
           <Route path="/category/:id" element={<Regions />} />
-          {/* Add the default route for homepage */}
           <Route path="/" element={<ForYouPage />} />
         </Routes>
       </BrowserRouter>

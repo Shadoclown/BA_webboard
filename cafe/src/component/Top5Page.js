@@ -125,7 +125,7 @@ const Top5Page = () => {
 
   return (
     <div className="top-5-container">
-      <h1 className="explore-title">Explore Cafes and Restaurants</h1>
+      {/* <h1 className="explore-title">Explore Cafes and Restaurants</h1>
       
       <div className="tabs-container">
         <div 
@@ -146,7 +146,7 @@ const Top5Page = () => {
         >
           Top 5
         </div>
-      </div>
+      </div> */}
 
       {loading ? (
         <div className="loading">Loading...</div>
