@@ -85,10 +85,10 @@ const Navbar = () => {
                 </div>
 
                 <div className="login-signup">
-                    <Link to="/login" className="login-button">
+                    <Link to="/login" className="nav-login-button">
                         Login
                     </Link>
-                    <Link to="/signup" className="signup-button">
+                    <Link to="/signup" className="nav-signup-button">
                         Sign Up
                     </Link>
                 </div>

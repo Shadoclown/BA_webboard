@@ -1,3 +1,5 @@
 -- router --
 npm install react-router-dom
 
+-- supabase --
+npm install @supabase/supabase-js
