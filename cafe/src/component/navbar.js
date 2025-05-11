@@ -99,7 +99,7 @@ const Navbar = ({ checklogin, userData, checklogout}) => {
 
                 {checklogin ? (
                     <div className="user-info">
-                        <span className="welcome-message">Welcome, {userData?.username || "User"}!</span>
+                        <span className="welcome-message">Welcome, {userData?.username || "User"}</span>
                         <Link to="/profile" className="nav-profile-button">
                             Profile
                         </Link>
