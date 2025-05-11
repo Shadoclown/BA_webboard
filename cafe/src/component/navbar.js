@@ -1,8 +1,14 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import '../style/navbar.css';
 
-const Navbar = () => {
+const Navbar = ({ checklogin, userData, checklogout}) => {
+    const navigate = useNavigate();
+    
+    const handleLogout = () => {
+        checklogout();
+        navigate('/login');
+    };
 
     return (
         <nav className="navbar">
@@ -81,17 +87,39 @@ const Navbar = () => {
                                 </li>
                             </ul>
                         </li>
+                        {checklogin && (
+                            <li className="nav-item">
+                                <Link to="/create-post" className="nav-links create-post-button">
+                                    Create Post
+                                </Link>
+                            </li>
+                        )}
                     </ul>
                 </div>
 
-                <div className="login-signup">
-                    <Link to="/login" className="nav-login-button">
-                        Login
-                    </Link>
-                    <Link to="/signup" className="nav-signup-button">
-                        Sign Up
-                    </Link>
-                </div>
+                {checklogin ? (
+                    <div className="user-info">
+                        <span className="welcome-message">Welcome, {userData?.username || "User"}!</span>
+                        <Link to="/profile" className="nav-profile-button">
+                            Profile
+                        </Link>
+                        <button 
+                            onClick={handleLogout} 
+                            className="nav-logout-button"
+                        >
+                            Logout
+                        </button>
+                    </div>
+                ) : (
+                    <div className="login-signup">
+                        <Link to="/login" className="nav-login-button">
+                            Login
+                        </Link>
+                        <Link to="/signup" className="nav-signup-button">
+                            Sign Up
+                        </Link>
+                    </div>
+                )}
             </div>
         </nav>
     );

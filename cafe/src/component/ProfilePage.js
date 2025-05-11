@@ -5,10 +5,15 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import '../style/ProfilePage.css';
 
 const ProfilePage = () => {
-  const userData = useLocation().state;
   const navigate = useNavigate();
-  const [user, setUser] = useState(null);
-  const [username, setUsername] = useState('User');
+  const location = useLocation();
+  const { 
+    user_id,
+    username: initialUsername = 'User',
+    email = 'User'
+  } = location.state || {};
+  
+  const [username, setUsername] = useState(initialUsername);
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   
@@ -17,11 +22,6 @@ const ProfilePage = () => {
     const fetchUserData = async () => {
       try {
         setLoading(true);
-        
-        // Make sure we have userData and extract id
-        const user_id = userData?.user_id;
-        setUsername(userData?.username || 'User');
-        const email = userData?.email || 'User';
         
         if (!user_id) {
           console.error('No user ID available');
@@ -49,7 +49,6 @@ const ProfilePage = () => {
           
         if (postsError) throw postsError;
         
-        setUser(data || { username: email });
         setPosts(postsData || []);
       } catch (error) {
         console.error('Error fetching profile data:', error);
@@ -59,7 +58,7 @@ const ProfilePage = () => {
     };
     
     fetchUserData();
-  }, []);
+  }, [user_id, email]);
   
   const handleCreatePost = () => {
     // Navigate to create post page

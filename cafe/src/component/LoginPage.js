@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import '../style/LoginPage.css';
 import supabase from './connect';
 
-const LoginPage = () => {
+const LoginPage = ({ isLogin }) => {
   // State variables
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -55,8 +55,8 @@ const LoginPage = () => {
         username: user.username,
         email: user.email
       };
-
-      navigate('/profile', {state: userData});
+      isLogin(userData);
+      navigate('/profile');
       
     } catch (err) {
       console.error('Login error:', err);

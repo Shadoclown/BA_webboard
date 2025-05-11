@@ -144,3 +144,67 @@
     background-color: #ffc4f2;
     border-color: #ff83f5;
 }
+
+/* Update the profile button style to match login/signup */
+.nav-profile-button {
+    margin-left: 15px;
+    padding: 6px 16px;
+    border-radius: 4px;
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+    border: 1px solid #ccc;
+    color: #000;
+    background-color: transparent;
+}
+
+.nav-profile-button:hover {
+    background-color: #c8e6ff;
+    border-color: #66b5ff;
+}
+
+/* Update the logout button style to match login/signup */
+.nav-logout-button {
+    margin-left: 15px;
+    padding: 6px 16px;
+    border-radius: 4px;
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+    border: 1px solid #ccc;
+    color: #000;
+    background-color: #ff9999;
+}
+
+.nav-logout-button:hover {
+    background-color: #ffd6d6;
+    border-color: #ff9999;
+}
+
+/* Keep the same welcome message styling */
+.welcome-message {
+    margin-right: 15px;
+    font-weight: 500;
+    color: #333;
+}
+
+/* Update the user-info container to match */
+.user-info {
+    display: flex;
+    align-items: center;
+}
+
+.create-post-button {
+    border-radius: 4px;
+    padding: 6px 16px;
+    border: 1px solid #ccc;
+    text-decoration: none;
+    background-color: #faf88a;
+    font-size: 0.9rem;
+    color: rgb(0, 0, 0);
+}
+.create-post-button:hover {
+    background-color: #fffecd;
+    border-color: #e9e641;
+    color: black
+}
