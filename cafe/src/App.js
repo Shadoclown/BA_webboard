@@ -8,6 +8,7 @@ import Browse from './component/Browse';
 import ForYouPage from './component/ForYouPage';
 import MostLikedPage from './component/MostLikedPage';
 import Top5Page from './component/Top5Page';
+import Regions from './component/Regions';
 
 function App() {
   const [checklogin, setchecklogin] = useState(false);
@@ -21,7 +22,6 @@ function App() {
   const handleLogout = () => {
     setchecklogin(false);
     setUser({});
-    // Navigation will be handled in the Navbar component
   };
 
   return (
@@ -36,6 +36,8 @@ function App() {
           <Route path="/for-you" element={<ForYouPage />} />
           <Route path="/most-like" element={<MostLikedPage />} />
           <Route path="/top-5" element={<Top5Page />} />
+          {/* Add route for region-specific pages */}
+          <Route path="/category/:id" element={<Regions />} />
           {/* Add the default route for homepage */}
           <Route path="/" element={<ForYouPage />} />
         </Routes>

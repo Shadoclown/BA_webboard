@@ -29,7 +29,7 @@ const Navbar = ({ checklogin, userData, checklogout}) => {
                         
                         <li className="nav-item dropdown">
                             <span className="nav-links dropdown-toggle">
-                                For You
+                                Explore
                             </span>
                             <ul className="dropdown-menu">
                                 <li>
