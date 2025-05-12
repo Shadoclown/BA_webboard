@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import supabase from './connect';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import '../style/ForYouPage.css';
 
 const ForYouPage = () => {
@@ -28,7 +28,6 @@ const ForYouPage = () => {
           post_like,
           user:user_id (username)
         `);
-        // Removed the .order() and .limit() calls
 
       if (error) {
         console.error('Supabase error:', error);
@@ -51,13 +50,17 @@ const ForYouPage = () => {
     if (tabName === 'For You') {
       // Stay on current page
     } else if (tabName === 'Most Liked') {
-      navigate('/most-like'); // Changed from '/most-liked' to match App.js route
+      navigate('/most-like');
     } else if (tabName === 'Top 5') {
       navigate('/top-5');
     }
   };
 
-  const handleLike = async (postId) => {
+  const handleLike = async (e, postId) => {
+    // Stop the event from bubbling up to the parent (Link)
+    e.stopPropagation();
+    e.preventDefault();
+    
     try {
       // Check if user is logged in
       const { data: { user } } = await supabase.auth.getUser();
@@ -108,56 +111,42 @@ const ForYouPage = () => {
 
   return (
     <div className="for-you-container">
-      {/* <h1 className="explore-title">Explore Cafes and Restaurants</h1>
-      
-      <div className="tabs-container">
-        <div 
-          className={`tab ${activeTab === 'For You' ? 'active' : ''}`}
-          onClick={() => handleTabClick('For You')}
-        >
-          For You
-        </div>
-        <div 
-          className={`tab ${activeTab === 'Most Liked' ? 'active' : ''}`}
-          onClick={() => handleTabClick('Most Liked')}
-        >
-          Most Liked
-        </div>
-        <div 
-          className={`tab ${activeTab === 'Top 5' ? 'active' : ''}`}
-          onClick={() => handleTabClick('Top 5')}
-        >
-          Top 5
-        </div>
-      </div> */}
-
       {loading ? (
         <div className="loading">Loading...</div>
       ) : (
         <div className="posts-grid">
           {posts.map(post => (
-            <div key={post.post_id} className="post-card">
-              <div className="post-header">
-                <div className="user-avatar"></div>
-                <div className="post-meta">
-                  <div className="username">{post.user?.username || 'Anonymous'}</div>
-                  <div className="post-date">
-                    {formatDate(post.created_at || getRandomDateForPost(post.post_id))}
+            <Link 
+              to={`/post/${post.post_id}`} 
+              key={post.post_id} 
+              className="post-card-link"
+            >
+              <div className="post-card">
+                <div className="post-header">
+                  <div className="user-avatar"></div>
+                  <div className="post-meta">
+                    <div className="username">{post.user?.username || 'Anonymous'}</div>
+                    <div className="post-date">
+                      {formatDate(post.created_at || getRandomDateForPost(post.post_id))}
+                    </div>
+                  </div>
+                </div>
+
+                <h3 className="post-title">{post.post_title}</h3>
+                <p className="post-content">{post.post_detail}</p>
+
+                <div className="post-footer">
+                  <div className="region-tag">{post.post_region}</div>
+                  <div 
+                    className="like-container" 
+                    onClick={(e) => handleLike(e, post.post_id)}
+                  >
+                    <span className="like-icon">👍</span>
+                    <span className="like-count">{post.post_like}</span>
                   </div>
                 </div>
               </div>
-
-              <h3 className="post-title">{post.post_title}</h3>
-              <p className="post-content">{post.post_detail}</p>
-
-              <div className="post-footer">
-                <div className="region-tag">{post.post_region}</div>
-                <div className="like-container" onClick={() => handleLike(post.post_id)}>
-                  <span className="like-icon">👍</span>
-                  <span className="like-count">{post.post_like}</span>
-                </div>
-              </div>
-            </div>
+            </Link>
           ))}
         </div>
       )}

@@ -1,3 +1,5 @@
+/* ForYouPage.css */
+
 .for-you-container {
   max-width: 1200px;
   margin: 0 auto;
@@ -21,16 +23,17 @@
   padding: 8px;
 }
 
-.active-tab, .not-active-tab {
+.tab {
   padding: 12px 40px;
   cursor: pointer;
   border-radius: 8px;
   font-weight: 500;
   text-align: center;
+  transition: background-color 0.3s;
 }
 
-.active-tab {
-  background-color: rgb(255, 255, 255);
+.tab.active {
+  background-color: white;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
@@ -45,28 +48,61 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 25px;
-  align-items: stretch;
+}
+
+/* Clickable post cards */
+.post-card-link {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  transition: transform 0.2s;
+}
+
+.post-card-link:hover {
+  transform: translateY(-5px);
 }
 
 .post-card {
   border-radius: 15px;
   padding: 20px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-  transition: transform 0.2s;
-  background-color: #f0f8ff;
+  background-color: #f0f8ff; /* Light blue background for all posts */
   display: flex;
   flex-direction: column;
-  height: 100%;
+  height: 100%; /* Ensure all cards are the same height */
 }
 
-.post-card:nth-child(2) { background-color: #f5edff; }
-.post-card:nth-child(3) { background-color: #ffedee; }
-.post-card:nth-child(4) { background-color: #e6fff2; }
-.post-card:nth-child(5) { background-color: #fffbe6; }
-.post-card:nth-child(6) { background-color: #e6fff2; }
+.post-card-link .post-card {
+  transition: none; /* Remove transition from post-card as link handles it */
+}
 
-.post-card:hover {
-  transform: translateY(-5px);
+.post-card-link .post-card:hover {
+  transform: none; /* Remove hover effect from post-card as link handles it */
+}
+
+.post-card-link:hover .post-card {
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* Color variations for each card */
+.post-card-link:nth-child(2) .post-card {
+  background-color: #f5edff; /* Light purple background */
+}
+
+.post-card-link:nth-child(3) .post-card {
+  background-color: #ffedee; /* Light pink background */
+}
+
+.post-card-link:nth-child(4) .post-card {
+  background-color: #e6fff2; /* Light cyan background */
+}
+
+.post-card-link:nth-child(5) .post-card {
+  background-color: #fffbe6; /* Light yellow background */
+}
+
+.post-card-link:nth-child(6) .post-card {
+  background-color: #e6fff2; /* Light green background */
 }
 
 .post-header {
@@ -103,6 +139,12 @@
   font-size: 18px;
   margin-bottom: 10px;
   font-weight: 600;
+  color: #333;
+  transition: color 0.2s;
+}
+
+.post-card-link:hover .post-title {
+  color: #4a90e2; /* Change title color on hover */
 }
 
 .post-content {
@@ -115,15 +157,16 @@
   -webkit-line-clamp: 3;
   line-clamp: 3;
   -webkit-box-orient: vertical;
-  min-height: 63px; /* Approximately 3 lines of text at 14px font and 1.5 line height */
+  flex-grow: 1; /* Let content take up available space */
+  min-height: 63px; /* Approximately 3 lines of text */
 }
 
 .post-footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: auto; /* This pushes the footer to the bottom */
-  padding-top: 15px; /* Add some space above the footer */
+  margin-top: auto; /* Push to bottom of card */
+  padding-top: 15px;
 }
 
 .region-tag {
@@ -138,6 +181,8 @@
   display: flex;
   align-items: center;
   cursor: pointer;
+  position: relative;
+  z-index: 2; /* Make sure like button is above the link layer */
 }
 
 .like-icon {

@@ -34,7 +34,7 @@ const ExplorePage = () => {
                         For You
                     </div>
 
-                    <div 
+                    <div
                         className={`${activeTab === 'Most Liked' ? 'active-tab' : 'not-active-tab'}`}
                         onClick={() => setActiveTab('Most Liked')}
                     >
