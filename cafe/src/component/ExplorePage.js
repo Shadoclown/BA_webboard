@@ -24,7 +24,7 @@ const ExplorePage = () => {
     return (
         <div className="explore-page">
             <h1 className="explore-title">Explore Cafes and Restaurants</h1>
-      
+
             <div className="tab-navigation">
                 <div className="tabs-container">
                     <div 

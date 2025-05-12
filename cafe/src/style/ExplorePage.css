@@ -22,34 +22,31 @@
 .tabs-container {
   position: relative;
   display: flex;
+  cursor: pointer;
+  align-items: center;
   background-color: #f0f0f0;
   border-radius: 30px;
-  padding: 5px;
+  padding: 5px 20px;
   min-width: 400px;
   justify-content: space-between;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-}
-
-.tab {
-  position: relative;
-  padding: 12px 24px;
-  cursor: pointer;
-  text-align: center;
-  z-index: 2;
-  flex: 1;
-  font-weight: 500;
-  color: #666;
-  transition: color 0.3s ease;
-  border-radius: 25px;
 }
 
 .tab:hover {
   color: #333;
 }
 
-.tab.active {
+.active-tab, .not-active-tab {
+  padding: 10px 20px;
+  font-size: 16px;
+  color: #666;
+  transition: all 0.3s ease-in-out;
+} 
+
+.active-tab {
   color: #000;
   background-color: white;
+  border-radius: 15px;
   font-weight: 600;
 }
 
