@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import supabase from './connect'; // Adjust the import based on your project structure
-import '../style/PostDetail.css'; // Import CSS file
+import '../style/PostDetail.css'; // Import CSS file - ensure this file exists at this path
 
 // --- Helper Functions ---
 const formatDate = (dateString, includeTime = false) => {
