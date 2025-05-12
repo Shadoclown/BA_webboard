@@ -1,0 +1,17 @@
+{
+  "files": {
+    "main.css": "/BA_webboard/cafe/static/css/main.5d33a81e.css",
+    "main.js": "/BA_webboard/cafe/static/js/main.7fe20199.js",
+    "static/js/952.75efc7e3.chunk.js": "/BA_webboard/cafe/static/js/952.75efc7e3.chunk.js",
+    "static/js/453.301385c6.chunk.js": "/BA_webboard/cafe/static/js/453.301385c6.chunk.js",
+    "index.html": "/BA_webboard/cafe/index.html",
+    "main.5d33a81e.css.map": "/BA_webboard/cafe/static/css/main.5d33a81e.css.map",
+    "main.7fe20199.js.map": "/BA_webboard/cafe/static/js/main.7fe20199.js.map",
+    "952.75efc7e3.chunk.js.map": "/BA_webboard/cafe/static/js/952.75efc7e3.chunk.js.map",
+    "453.301385c6.chunk.js.map": "/BA_webboard/cafe/static/js/453.301385c6.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.5d33a81e.css",
+    "static/js/main.7fe20199.js"
+  ]
+}
