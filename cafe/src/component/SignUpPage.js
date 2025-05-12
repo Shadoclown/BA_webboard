@@ -48,6 +48,36 @@ const SignUpPage = () => {
     setError('');
     
     try {
+      // Check if username already exists
+      const { data: existingUsers, error: checkUserError } = await supabase
+        .from('user')
+        .select('username')
+        .eq('username', formData.username)
+        .limit(1);
+      
+      if (checkUserError) throw checkUserError;
+      
+      if (existingUsers && existingUsers.length > 0) {
+        setError('Username is already taken. Please choose a different username.');
+        setLoading(false);
+        return;
+      }
+      
+      // Check if email already exists
+      const { data: existingEmails, error: checkEmailError } = await supabase
+        .from('user')
+        .select('email')
+        .eq('email', formData.email)
+        .limit(1);
+      
+      if (checkEmailError) throw checkEmailError;
+      
+      if (existingEmails && existingEmails.length > 0) {
+        setError('This email is already registered. Please use a different email address or try logging in.');
+        setLoading(false);
+        return;
+      }
+      
       // Hash password before storing
       const salt = await bcrypt.genSalt(10);
       const hashedPassword = await bcrypt.hash(formData.password, salt);
@@ -59,7 +89,7 @@ const SignUpPage = () => {
           {
             username: formData.username,
             email: formData.email,
-            password: hashedPassword // Store hashed password
+            password: hashedPassword
           }
         ]);
       
@@ -83,7 +113,19 @@ const SignUpPage = () => {
       
     } catch (error) {
       console.error('Signup error:', error);
-      setError(error.message || 'An error occurred during signup');
+      
+      // Provide more specific error messages based on error codes
+      if (error.code === '23505') {
+        if (error.details?.includes('email')) {
+          setError('This email is already registered. Please use a different email address.');
+        } else if (error.details?.includes('username')) {
+          setError('This username is already taken. Please choose a different username.');
+        } else {
+          setError('This account already exists. Please try logging in instead.');
+        }
+      } else {
+        setError(error.message || 'An error occurred during signup');
+      }
     } finally {
       setLoading(false);
     }
