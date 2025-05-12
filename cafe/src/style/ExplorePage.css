@@ -49,6 +49,7 @@
 
 .tab.active {
   color: #000;
+  background-color: white;
   font-weight: 600;
 }
 
