@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import '../style/LoginPage.css';
 import supabase from './connect';
+import bcrypt from 'bcryptjs';
 
 const LoginPage = ({ isLogin }) => {
   // State variables
@@ -19,7 +20,7 @@ const LoginPage = ({ isLogin }) => {
     
     // Basic validation
     if (!username || !password) {
-      setError('Please enter both email and password');
+      setError('Please enter both username and password');
       return;
     }
     
@@ -38,20 +39,21 @@ const LoginPage = ({ isLogin }) => {
       
       // Check if user exists
       if (!users || users.length === 0) {
-        setError('No account found with this email');
+        setError('No account found with this username');
         return;
       }
       
       const user = users[0];
       
-      // Check if password matches
-      if (user.password !== password) {
+      // Verify password using bcrypt
+      const isValidPassword = await bcrypt.compare(password, user.password);
+      if (!isValidPassword) {
         setError('Incorrect password');
         return;
       }
 
       const userData = {
-        userId: user.user_id,
+        user_id: user.user_id,
         username: user.username,
         email: user.email
       };

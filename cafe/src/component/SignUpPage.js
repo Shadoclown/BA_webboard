@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import '../style/SignUpPage.css';
 import supabase from './connect';
+import bcrypt from 'bcryptjs';
 
 const SignUpPage = () => {
   const navigate = useNavigate();
@@ -47,6 +48,10 @@ const SignUpPage = () => {
     setError('');
     
     try {
+      // Hash password before storing
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(formData.password, salt);
+      
       // Insert user data into your users table
       const { error: dbError } = await supabase
         .from('user')
@@ -54,7 +59,7 @@ const SignUpPage = () => {
           {
             username: formData.username,
             email: formData.email,
-            password: formData.password
+            password: hashedPassword // Store hashed password
           }
         ]);
       
