@@ -27,27 +27,11 @@ const Navbar = ({ checklogin, userData, checklogout}) => {
                             </Link>
                         </li>
                         
-                        <li className="nav-item dropdown">
-                            <span className="nav-links dropdown-toggle">
+                        {/* Changed Explore from dropdown to direct link */}
+                        <li className="nav-item">
+                            <Link to="/explore" className="nav-links">
                                 Explore
-                            </span>
-                            <ul className="dropdown-menu">
-                                <li>
-                                    <Link to="/explore" className="dropdown-link">
-                                        For You
-                                    </Link>
-                                </li>
-                                <li>
-                                    <Link to="/most-like" className="dropdown-link">
-                                        Most Like
-                                    </Link>
-                                </li>
-                                <li>
-                                    <Link to="/top-5" className="dropdown-link">
-                                        Top 5
-                                    </Link>
-                                </li>
-                            </ul>
+                            </Link>
                         </li>
                         
                         <li className="nav-item dropdown">

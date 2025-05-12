@@ -1,8 +1,8 @@
 // src/components/PostDetailPage.jsx
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import supabase from './connect'; // Adjust the import based on your project structure
-import '../style/PostDetail.css'; // Import CSS file - ensure this file exists at this path
+import supabase from './connect'; // Make sure this path matches your project structure
+import '../style/PostDetailPage.css';
 
 // --- Helper Functions ---
 const formatDate = (dateString, includeTime = false) => {
@@ -17,28 +17,56 @@ const formatDate = (dateString, includeTime = false) => {
 };
 
 const getAllImageUrls = (post) => {
-    const urls = [];
-    if (!post) return urls;
-    let imagesProcessedFromPostImageArray = false;
-    if (post.post_image) {
-        if (typeof post.post_image === 'string' && post.post_image.startsWith('[') && post.post_image.endsWith(']')) {
-            try {
-                const parsedImages = JSON.parse(post.post_image);
-                if (Array.isArray(parsedImages)) {
-                    parsedImages.forEach(url => { if (typeof url === 'string' && url.trim() !== '') urls.push(url.trim()); });
-                    imagesProcessedFromPostImageArray = true;
-                } else if (typeof post.post_image === 'string' && post.post_image.trim() !== '') { urls.push(post.post_image.trim()); }
-            } catch (e) { if (typeof post.post_image === 'string' && post.post_image.trim() !== '') { urls.push(post.post_image.trim()); } }
-        } else if (typeof post.post_image === 'string' && post.post_image.trim() !== '') { urls.push(post.post_image.trim()); }
+  const urls = [];
+  if (!post) return urls;
+  let imagesProcessedFromPostImageArray = false;
+  
+  if (post.post_image) {
+    if (typeof post.post_image === 'string' && post.post_image.startsWith('[') && post.post_image.endsWith(']')) {
+      try {
+        const parsedImages = JSON.parse(post.post_image);
+        if (Array.isArray(parsedImages)) {
+          parsedImages.forEach(url => { 
+            if (typeof url === 'string' && url.trim() !== '') 
+              urls.push(url.trim()); 
+          });
+          imagesProcessedFromPostImageArray = true;
+        } else if (typeof post.post_image === 'string' && post.post_image.trim() !== '') { 
+          urls.push(post.post_image.trim()); 
+        }
+      } catch (e) { 
+        if (typeof post.post_image === 'string' && post.post_image.trim() !== '') { 
+          urls.push(post.post_image.trim()); 
+        } 
+      }
+    } else if (typeof post.post_image === 'string' && post.post_image.trim() !== '') { 
+      urls.push(post.post_image.trim()); 
     }
-    if (!imagesProcessedFromPostImageArray) {
-        if (post.post_image_2 && typeof post.post_image_2 === 'string' && post.post_image_2.trim() !== '') { urls.push(post.post_image_2.trim()); }
-        if (post.post_image_3 && typeof post.post_image_3 === 'string' && post.post_image_3.trim() !== '') { urls.push(post.post_image_3.trim()); }
+  }
+  
+  if (!imagesProcessedFromPostImageArray) {
+    if (post.post_image_2 && typeof post.post_image_2 === 'string' && post.post_image_2.trim() !== '') { 
+      urls.push(post.post_image_2.trim()); 
     }
-    return urls;
+    if (post.post_image_3 && typeof post.post_image_3 === 'string' && post.post_image_3.trim() !== '') { 
+      urls.push(post.post_image_3.trim()); 
+    }
+  }
+  return urls;
 };
-// --- End Helper Functions ---
 
+// Function to get related posts by region
+const getRegionDescription = (region) => {
+  const descriptions = {
+    'South': 'Southern establishments are famous for their hospitality and traditional recipes.',
+    'Central': 'Central area offers a variety of dining experiences in the heart of the city.',
+    'North': 'Northern region is known for its cozy cafes and hearty meals.',
+    'East': 'Eastern establishments feature unique fusion cuisine and scenic views.',
+    'West': 'Western area is famous for trendy spots and innovative dining concepts.'
+  };
+  
+  return descriptions[region] || 'This region offers unique dining experiences and local specialties.';
+};
 
 const PostDetailPage = ({ checklogin, userData }) => {
   const { postId } = useParams();
@@ -53,6 +81,10 @@ const PostDetailPage = ({ checklogin, userData }) => {
   const [loadingComments, setLoadingComments] = useState(true);
   const [newCommentText, setNewCommentText] = useState('');
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+  
+  // --- Related Posts State ---
+  const [relatedPosts, setRelatedPosts] = useState([]);
+  const [loadingRelated, setLoadingRelated] = useState(true);
 
   // Fetch post details
   useEffect(() => {
@@ -76,6 +108,11 @@ const PostDetailPage = ({ checklogin, userData }) => {
         setPost(data);
         const storedVote = localStorage.getItem(`post-${postId}-vote`);
         if (storedVote) setUserVote(JSON.parse(storedVote));
+        
+        // Fetch related posts if we have a region
+        if (data.post_region) {
+          fetchRelatedPosts(data.post_region, data.post_id);
+        }
       } catch (err) {
         console.error('Error fetching post details:', err);
         setError(err.message || 'Failed to load post.');
@@ -86,6 +123,32 @@ const PostDetailPage = ({ checklogin, userData }) => {
     fetchPostDetails();
   }, [postId]);
 
+  // Fetch related posts
+  const fetchRelatedPosts = async (region, currentPostId) => {
+    setLoadingRelated(true);
+    try {
+      const { data, error } = await supabase
+        .from('post')
+        .select(`
+          post_id,
+          post_title,
+          user_id,
+          user:user_id (username)
+        `)
+        .eq('post_region', region)
+        .neq('post_id', currentPostId)
+        .limit(3);
+        
+      if (error) throw error;
+      setRelatedPosts(data || []);
+    } catch (err) {
+      console.error('Error fetching related posts:', err);
+      // Don't set error state to avoid disrupting the main content
+    } finally {
+      setLoadingRelated(false);
+    }
+  };
+
   // Fetch comments
   const fetchComments = useCallback(async () => {
     if (!postId) return;
@@ -95,7 +158,7 @@ const PostDetailPage = ({ checklogin, userData }) => {
       const { data, error: commentsError } = await supabase
         .from('comment')
         .select('*')
-        .eq('post_id', postId)
+        .eq('post_id', postId);
         // .order('created_at', { ascending: true });
 
       if (commentsError) throw commentsError;
@@ -133,7 +196,6 @@ const PostDetailPage = ({ checklogin, userData }) => {
     fetchComments();
   }, [fetchComments]);
 
-
   const handleVote = async (voteType) => {
     if (!post || isUpdatingVotes) return;
     setIsUpdatingVotes(true);
@@ -146,27 +208,54 @@ const PostDetailPage = ({ checklogin, userData }) => {
     const originalUserVoteState = { ...userVote };
 
     if (voteType === 'like') {
-      if (userVote.liked) { newLikes = currentLikes - 1; newUserVote.liked = false; }
-      else { newLikes = currentLikes + 1; newUserVote.liked = true;
-        if (userVote.disliked) { newDislikes = currentDislikes - 1; newUserVote.disliked = false;}
+      if (userVote.liked) { 
+        newLikes = currentLikes - 1; 
+        newUserVote.liked = false; 
+      } else { 
+        newLikes = currentLikes + 1; 
+        newUserVote.liked = true;
+        if (userVote.disliked) { 
+          newDislikes = currentDislikes - 1; 
+          newUserVote.disliked = false;
+        }
       }
     } else if (voteType === 'dislike') {
-      if (userVote.disliked) { newDislikes = currentDislikes - 1; newUserVote.disliked = false; }
-      else { newDislikes = currentDislikes + 1; newUserVote.disliked = true;
-        if (userVote.liked) { newLikes = currentLikes - 1; newUserVote.liked = false; }
+      if (userVote.disliked) { 
+        newDislikes = currentDislikes - 1; 
+        newUserVote.disliked = false; 
+      } else { 
+        newDislikes = currentDislikes + 1; 
+        newUserVote.disliked = true;
+        if (userVote.liked) { 
+          newLikes = currentLikes - 1; 
+          newUserVote.liked = false; 
+        }
       }
     }
+    
     setPost(p => ({...p, post_like: Math.max(0, newLikes), post_dislike: Math.max(0, newDislikes)}));
     setUserVote(newUserVote);
     localStorage.setItem(`post-${postId}-vote`, JSON.stringify(newUserVote));
+    
     try {
-      const { error: updateError } = await supabase.from('post').update({ post_like: Math.max(0, newLikes), post_dislike: Math.max(0, newDislikes) }).eq('post_id', postId);
+      const { error: updateError } = await supabase
+        .from('post')
+        .update({ 
+          post_like: Math.max(0, newLikes), 
+          post_dislike: Math.max(0, newDislikes) 
+        })
+        .eq('post_id', postId);
+        
       if (updateError) throw updateError;
     } catch (err) {
       console.error(`Error updating post vote:`, err);
-      setPost(originalPostState); setUserVote(originalUserVoteState); localStorage.setItem(`post-${postId}-vote`, JSON.stringify(originalUserVoteState));
+      setPost(originalPostState); 
+      setUserVote(originalUserVoteState); 
+      localStorage.setItem(`post-${postId}-vote`, JSON.stringify(originalUserVoteState));
       alert(`Failed to update vote. Please try again.`);
-    } finally { setIsUpdatingVotes(false); }
+    } finally { 
+      setIsUpdatingVotes(false); 
+    }
   };
 
   const handleSubmitComment = async (e) => {
@@ -244,6 +333,12 @@ const PostDetailPage = ({ checklogin, userData }) => {
     }
   };
 
+  // Helper to display commenter name
+  const getCommenterName = (commentUser) => {
+    if (!commentUser) return 'Anonymous';
+    return commentUser.username || 'User';
+  };
+
   if (loadingPost) return <p className="loadingError">Loading post details...</p>;
   if (error) return <p className="loadingError">Error: {error} </p>;
   if (!post) return <p className="loadingError">Post not found.</p>;
@@ -251,92 +346,173 @@ const PostDetailPage = ({ checklogin, userData }) => {
   const authorDisplayName = post.user?.username || `User ID: ${post.user_id ? post.user_id.substring(0, 8) : 'N/A'}...`;
   const allImageUrls = getAllImageUrls(post);
 
-  // Helper to display commenter name
-  const getCommenterName = (commentUser) => {
-    if (!commentUser) return 'Anonymous';
-    return commentUser.username || 'User';
-  };
-
-
   return (
-    <div className="container">
-      {/* ... Post Title, Meta, Description, Images, Actions ... */}
-      <h1 className="title">{post.post_title || 'Untitled Post'}</h1>
-      <p className="meta">
-        By {authorDisplayName} • Published on {formatDate(post.created_at)}
-      </p>
-      {post.post_region && <span className="regionTag">{post.post_region}</span>}
-      <div className="description">{post.post_detail || 'No description available.'}</div>
-      {allImageUrls.length > 0 ? ( <div className="imageGrid"> {allImageUrls.map((url, index) => ( <img key={index} src={url} alt={`${post.post_title || 'Post'} image ${index + 1}`} className="postImage" /> ))} </div> ) : ( <div className="imageGrid"><div className="imagePlaceholder">No Images Available</div></div> )}
-      <div className="actions">
-        <span className={`actionItem ${userVote.liked ? 'activeVote' : ''} ${isUpdatingVotes ? 'disabledButton' : ''}`} onClick={() => !isUpdatingVotes && handleVote('like')} role="button" tabIndex={0} onKeyPress={(e) => { if (!isUpdatingVotes && (e.key === 'Enter' || e.key === ' ')) handleVote('like'); }}>
-          <button className="actionButton" disabled={isUpdatingVotes}>👍 {post.post_like || 0}</button>
-        </span>
-        <span className={`actionItem ${userVote.disliked ? 'activeDislike' : ''} ${isUpdatingVotes ? 'disabledButton' : ''}`} onClick={() => !isUpdatingVotes && handleVote('dislike')} role="button" tabIndex={0} onKeyPress={(e) => { if (!isUpdatingVotes && (e.key === 'Enter' || e.key === ' ')) handleVote('dislike'); }}>
-          <button className="actionButton" disabled={isUpdatingVotes}>👎 {post.post_dislike || 0}</button>
-        </span>
-        {/* Use fetched comments length for a more reactive count */}
-        <span className="actionItem">💬 {comments.length > 0 ? comments.length : (post.comment_count || 0)} Comments</span>
-      </div>
-
-      {/* --- Comments Section --- */}
-      <div className="commentsSection">
-        <h2 className="commentsTitle">Comments ({comments.length > 0 ? comments.length : (post.comment_count || 0)})</h2>
-        
-        {/* Comment Form */}
-        {checklogin ? (
-          <form onSubmit={handleSubmitComment} className="commentForm">
-            <p className="loggedInAs">Posting as: <strong>{userData?.username || 'User'}</strong></p>
-            <textarea
-              className="commentTextarea"
-              value={newCommentText}
-              onChange={(e) => setNewCommentText(e.target.value)}
-              placeholder="Write a comment..."
-              rows="3"
-              disabled={isSubmittingComment}
-            />
-            <button
-              type="submit"
-              className={`commentSubmitButton ${isSubmittingComment ? 'commentSubmitButtonDisabled' : ''}`}
-              disabled={isSubmittingComment}
-            >
-              {isSubmittingComment ? 'Submitting...' : 'Submit Comment'}
-            </button>
-          </form>
-        ) : (
-          <div className="loginPrompt">
-            <p>Please <Link to="/login">log in</Link> to post a comment.</p>
-            <p className="loginNote">(Already logged in? Try refreshing the page.)</p>
-          </div>
-        )}
-
-        {loadingComments && <p>Loading comments...</p>}
-        {!loadingComments && comments.length === 0 && (
-          <p className="noComments">No comments yet. Be the first to comment!</p>
-        )}
-        {!loadingComments && comments.length > 0 && (
-          <div>
-            {comments.map((comment) => (
-              <div key={comment.comment_id} className="comment">
-                <p className="commentAuthor">
-                  {getCommenterName(comment.user)}
-                </p>
-                <p className="commentDate">
-                  {formatDate(comment.created_at, true)}
-                </p>
-                <p className="commentText">{comment.comment_detail}</p>
-                <div className="commentActions">
-                  <span className="commentActionItem">👍 {comment.comment_like || 0}</span>
-                  <span className="commentActionItem">👎 {comment.comment_dislike || 0}</span>
-                </div>
+    <div className="pageContainer">
+      <Link to="/" className="backLink">
+        Back to Post
+      </Link>
+      
+      <div className="contentLayout">
+        {/* Main Content Column */}
+        <div className="mainContent">
+          {/* Post Card */}
+          <div className="postCard">
+            <h1 className="title">{post.post_title || 'Untitled Post'}</h1>
+            
+            <div className="meta">
+              <span className="postAuthor">By {authorDisplayName}</span>
+              <span className="postDate"> • {formatDate(post.created_at)}</span>
+              {post.post_region && <span className="regionTag">{post.post_region}</span>}
+            </div>
+            
+            <div className="description">{post.post_detail || 'No description available.'}</div>
+            
+            {allImageUrls.length > 0 ? (
+              <div className="imageGrid">
+                {allImageUrls.map((url, index) => (
+                  <img 
+                    key={index} 
+                    src={url} 
+                    alt={`${post.post_title || 'Post'} image ${index + 1}`} 
+                    className="postImage" 
+                  />
+                ))}
               </div>
-            ))}
+            ) : (
+              <div className="imageGrid">
+                <div className="imagePlaceholder">No Images Available</div>
+              </div>
+            )}
+            
+            <div className="actions">
+              <button 
+                className={`voteButton ${userVote.liked ? 'activeVote' : ''}`}
+                onClick={() => !isUpdatingVotes && handleVote('like')}
+                disabled={isUpdatingVotes}
+              >
+                👍 {post.post_like || 0}
+              </button>
+              
+              <button 
+                className={`voteButton ${userVote.disliked ? 'activeDislike' : ''}`}
+                onClick={() => !isUpdatingVotes && handleVote('dislike')}
+                disabled={isUpdatingVotes}
+              >
+                👎 {post.post_dislike || 0}
+              </button>
+              
+              <span className="commentCount">
+                💬 {comments.length > 0 ? comments.length : (post.comment_count || 0)} comments
+              </span>
+            </div>
           </div>
-        )}
+          
+          {/* Comments Section */}
+          <div className="commentsCard">
+            <h2 className="commentsTitle">Comments ({comments.length > 0 ? comments.length : (post.comment_count || 0)})</h2>
+            
+            {checklogin ? (
+              <form onSubmit={handleSubmitComment} className="commentForm">
+                <textarea
+                  className="commentTextarea"
+                  value={newCommentText}
+                  onChange={(e) => setNewCommentText(e.target.value)}
+                  placeholder="Write a comment..."
+                  disabled={isSubmittingComment}
+                />
+                <button
+                  type="submit"
+                  className="commentButton"
+                  disabled={isSubmittingComment}
+                >
+                  {isSubmittingComment ? 'Submitting...' : 'Submit Comment'}
+                </button>
+              </form>
+            ) : (
+              <div className="loginPrompt">
+                <textarea
+                  className="commentTextarea"
+                  placeholder="Login to comment"
+                  disabled={true}
+                />
+                <Link to="/login" className="commentButton">
+                  Login to Comment
+                </Link>
+              </div>
+            )}
+            
+            {loadingComments && <p>Loading comments...</p>}
+            
+            {!loadingComments && comments.length === 0 && (
+              <p className="noComments">No comments yet. Be the first to comment!</p>
+            )}
+            
+            {!loadingComments && comments.length > 0 && (
+              <div className="commentsList">
+                {comments.map((comment) => (
+                  <div key={comment.comment_id} className="comment">
+                    <p className="commentAuthor">
+                      {getCommenterName(comment.user)}
+                    </p>
+                    <p className="commentDate">
+                      {formatDate(comment.created_at, true)}
+                    </p>
+                    <p className="commentText">{comment.comment_detail}</p>
+                    <div className="commentActions">
+                      <span className="commentActionItem">👍 {comment.comment_like || 0}</span>
+                      <span className="commentActionItem">👎 {comment.comment_dislike || 0}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+        
+        {/* Sidebar Column */}
+        <div className="regionSidebar">
+          <h2 className="sidebarTitle">About This Region</h2>
+          
+          <div className="regionInfoBox">
+            <h3 className="regionName">{post.post_region || 'Region'} Region</h3>
+            <p className="regionDescription">
+              {getRegionDescription(post.post_region)}
+            </p>
+          </div>
+          
+          <div className="moreFromRegion">
+            <h3 className="sidebarTitle">More from this region</h3>
+            
+            {loadingRelated ? (
+              <p>Loading related posts...</p>
+            ) : relatedPosts.length > 0 ? (
+              <>
+                {relatedPosts.map(relatedPost => (
+                  <div key={relatedPost.post_id} className="relatedPost">
+                    <h4 className="relatedPostTitle">
+                      <Link to={`/post/${relatedPost.post_id}`}>
+                        {relatedPost.post_title || 'Untitled Post'}
+                      </Link>
+                    </h4>
+                    <p className="relatedPostAuthor">
+                      By {relatedPost.user?.username || 'Anonymous'}
+                    </p>
+                  </div>
+                ))}
+                
+                <Link 
+                  to={`/region/${post.post_region}`} 
+                  className="viewAllLink"
+                >
+                  View All {post.post_region} Reviews
+                </Link>
+              </>
+            ) : (
+              <p>No related posts found.</p>
+            )}
+          </div>
+        </div>
       </div>
-      {/* --- End Comments Section --- */}
-
-      <Link to="/" className="backLink">← Back to Home</Link>
     </div>
   );
 };
