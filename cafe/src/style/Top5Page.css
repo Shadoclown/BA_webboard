@@ -133,26 +133,33 @@
 }
 
 .featured-post {
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.3s ease;
+  border-radius: 8px;
+  padding: 15px;
   margin-top: 15px;
+  background-color: #fff;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.featured-post:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
 }
 
 .featured-post-title {
-  font-size: 20px;
-  color: #f0a374;
-  margin: 0 0 10px 0;
-  font-weight: 500;
+  color: #333;
+  margin-bottom: 10px;
 }
 
 .featured-post-description {
-  font-size: 14px;
-  color: #555;
-  line-height: 1.5;
+  color: #666;
   margin-bottom: 15px;
-  overflow: hidden;
   display: -webkit-box;
   -webkit-line-clamp: 3;
-  line-clamp: 3;
   -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .carousel-indicator {

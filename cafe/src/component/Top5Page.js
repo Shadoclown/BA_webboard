@@ -175,6 +175,10 @@ const Top5Page = () => {
     setCurrentDislikedSlide(prev => (prev + 1) % dislikedList.length);
   };
 
+  const handlePostClick = (postId) => {
+    navigate(`/post/${postId}`);
+  };
+
   return (
     <div className="top-5-container">
       {loading ? (
@@ -214,7 +218,12 @@ const Top5Page = () => {
                     </div>
 
                     {list.posts.slice(0, 1).map(post => (
-                      <div key={post.post_id} className="featured-post">
+                      <div 
+                        key={post.post_id} 
+                        className="featured-post"
+                        onClick={() => handlePostClick(post.post_id)}
+                        style={{ cursor: 'pointer' }}
+                      >
                         <h3 className="featured-post-title">{post.post_title || 'Untitled Post'}</h3>
                         <p className="featured-post-description">
                           {post.post_detail || 'No description available.'}
@@ -289,7 +298,12 @@ const Top5Page = () => {
                         </div>
 
                         {list.posts.slice(0, 1).map(post => (
-                          <div key={post.post_id} className="featured-post">
+                          <div 
+                            key={post.post_id} 
+                            className="featured-post"
+                            onClick={() => handlePostClick(post.post_id)}
+                            style={{ cursor: 'pointer' }}
+                          >
                             <h3 className="featured-post-title">{post.post_title || 'Untitled Post'}</h3>
                             <p className="featured-post-description">
                               {post.post_detail || 'No description available.'}

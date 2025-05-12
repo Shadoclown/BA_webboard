@@ -99,6 +99,10 @@ const Regions = () => {
     return `${month} ${day}`;
   };
 
+  const handlePostClick = (postId) => {
+    navigate(`/post/${postId}`);
+  };
+
   return (
     <div className="region-container">
       <h1 className={`region-title region-${regionName}`}>{regionName} Region Cafes and Restaurants</h1>
@@ -108,7 +112,7 @@ const Regions = () => {
       ) : posts.length > 0 ? (
         <div className="region-posts-grid">
           {posts.map(post => (
-            <div key={post.post_id} className={`region-post-card region-${regionName}`}>
+            <div key={post.post_id} className={`region-post-card region-${regionName}`} onClick={() => handlePostClick(post.post_id)}>
               <div className="region-post-header">
                 <div className="region-user-avatar">
                   {post.user?.username?.[0].toUpperCase() || 'A'}
