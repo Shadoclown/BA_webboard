@@ -1,6 +1,6 @@
 // src/components/PostDetailPage.jsx
 import React, { useState, useEffect, useCallback } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import supabase from './connect'; // Make sure this path matches your project structure
 import '../style/PostDetailPage.css';
 
@@ -75,6 +75,7 @@ const PostDetailPage = ({ checklogin, userData }) => {
   const [error, setError] = useState(null);
   const [isUpdatingVotes, setIsUpdatingVotes] = useState(false);
   const [userVote, setUserVote] = useState({ liked: false, disliked: false });
+  const navigate = useNavigate();
 
   // --- Comments State ---
   const [comments, setComments] = useState([]);
@@ -468,7 +469,6 @@ const PostDetailPage = ({ checklogin, userData }) => {
 
   return (
     <div className="pageContainer">
-      
       <div className="contentLayout">
         {/* Main Content Column */}
         <div className="mainContent">

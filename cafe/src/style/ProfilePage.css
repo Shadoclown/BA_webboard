@@ -68,6 +68,7 @@
   box-shadow: 0 1px 3px rgba(0,0,0,0.05);
   width: 100%;
   box-sizing: border-box;
+  position: relative;
 }
 
 .post-card:hover {
@@ -142,6 +143,90 @@
 .like-count {
   font-size: 14px;
   color: #666;
+}
+
+/* Delete Post Button */
+.delete-post-button {
+  background: none;
+  border: none;
+  font-size: 16px;
+  color: #999;
+  cursor: pointer;
+  padding: 5px;
+  line-height: 1;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: auto;
+  transition: all 0.2s;
+}
+
+.delete-post-button:hover {
+  background-color: #f0f0f0;
+  color: #ff4d4f;
+}
+
+.post-content-wrapper {
+  cursor: pointer;
+}
+
+/* Delete confirmation dialog */
+.delete-confirm-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  border-radius: 10px;
+}
+
+.delete-confirm-dialog {
+  background-color: white;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  width: 85%;
+}
+
+.delete-confirm-dialog p {
+  margin: 0 0 15px 0;
+  font-weight: 500;
+  color: #333;
+}
+
+.delete-confirm-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.cancel-delete-button {
+  padding: 8px 16px;
+  background-color: #f0f0f0;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.confirm-delete-button {
+  padding: 8px 16px;
+  background-color: #ff4d4f;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.confirm-delete-button:disabled, .cancel-delete-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 /* Responsive adjustments */
