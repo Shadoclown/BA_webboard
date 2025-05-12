@@ -16,8 +16,7 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "predeploy": "cd cafe && npm run build",
-    "deploy": "gh-pages -d build",
+    "predeploy": "cd cafe",
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
