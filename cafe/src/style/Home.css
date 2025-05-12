@@ -154,22 +154,26 @@
 
 .imageContainer {
   display: flex;
+  width: 100%;
+  height: auto;
+  min-height: 40px;
   gap: 10px;
   margin-bottom: 15px;
   align-items: center;
+  padding: 5px 0;
 }
 
 .postImage {
-  width: 80px;
-  height: 80px;
-  border-radius: 4px;
+  width: 100px !important;
+  height: 100px !important;
+  border-radius: 2px;
   object-fit: cover;
   border: 1px solid #eee;
 }
 
 .imagePlaceholder {
-  width: 80px;
-  height: 80px;
+  width: 40px;
+  height: 40px;
   border-radius: 4px;
   background-color: #f0f0f0;
   display: flex;
@@ -182,8 +186,8 @@
 }
 
 .plusMoreImages {
-  width: 80px;
-  height: 80px;
+  width: 40px;
+  height: 40px;
   border-radius: 4px;
   background-color: #e9ecef;
   display: flex;

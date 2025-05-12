@@ -131,15 +131,31 @@ const PostCard = ({ post, commentCount }) => {
       <p className="cardDescription">{displayDescription}</p>
 
       <div className="imageContainer">
-        {imageSlots.slice(0, MAX_UI_IMAGE_SLOTS).map((img, index) => {
-          if (img.type === 'real') {
-            return <img key={index} src={img.src} alt={img.alt} className="postImage" />;
-          } else if (img.type === 'plusMore') {
-            return <div key={index} className="plusMoreImages">{img.text}</div>;
-          } else {
-            return <div key={index} className="imagePlaceholder">{img.text}</div>;
-          }
-        })}
+        {allImageUrls.length === 0 ? (
+          // If there are no images at all, show one placeholder
+          <img 
+            src="https://placehold.co/40x40/EEE/31343C" 
+            alt="No Image Available" 
+            className="postImage" 
+          />
+        ) : (
+          // Otherwise show the actual images
+          imageSlots.slice(0, MAX_UI_IMAGE_SLOTS).map((img, index) => {
+            if (img.type === 'real') {
+              return <img key={index} src={img.src} alt={img.alt} className="postImage" />;
+            } else if (img.type === 'plusMore') {
+              return <div key={index} className="plusMoreImages">{img.text}</div>;
+            } else {
+              // Use the placeholder image URL for any other case
+              return <img 
+                key={index} 
+                src="https://placehold.co/40x40/EEE/31343C" 
+                alt="No Image" 
+                className="postImage" 
+              />;
+            }
+          })
+        )}
       </div>
 
       <div className="cardActions">
