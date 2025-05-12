@@ -1,6 +1,7 @@
 import Navbar from './component/navbar';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import supabase from './component/connect';
 import LoginPage from './component/LoginPage';
 import SignUpPage from './component/SignUpPage';
 import ProfilePage from './component/ProfilePage';
@@ -15,6 +16,33 @@ import PostDetailPage from './component/PostDetailPage'; // Import PostDetailPag
 function App() {
   const [checklogin, setchecklogin] = useState(false);
   const [User, setUser] = useState({});
+
+  // Add effect to check session on app load
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session && session.user) {
+        console.log("Found existing session:", session.user);
+        
+        // Get user data from your user table
+        const { data: userData, error } = await supabase
+          .from('user')
+          .select('*')
+          .eq('user_id', session.user.id)
+          .single();
+          
+        if (!error && userData) {
+          console.log("User data retrieved:", userData);
+          setchecklogin(true);
+          setUser(userData);
+        } else {
+          console.error("Error getting user data:", error);
+        }
+      }
+    };
+    
+    checkSession();
+  }, []);
 
   const handleLogin = (userData) => {
     setchecklogin(true);
@@ -32,7 +60,8 @@ function App() {
         <Navbar checklogin={checklogin} userData={User} checklogout={handleLogout}/>
         <Routes>
           <Route path="/" element={<HomePage />} />
-          <Route path="/post/:postId" element={<PostDetailPage />} /> {/* Add route for post details */}
+          <Route path="/browse" element={<HomePage />} />
+          <Route path="/post/:postId" element={<PostDetailPage checklogin={checklogin} userData={User}/>} /> {/* Add route for post details */}
           <Route path="/login" element={<LoginPage isLogin={handleLogin}/>} />
           <Route path="/signup" element={<SignUpPage />} />
           <Route path="/profile" element={<ProfilePage userData={User} />} /> 

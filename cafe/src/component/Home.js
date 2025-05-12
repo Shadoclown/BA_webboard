@@ -30,7 +30,7 @@ const formatBriefDescription = (text, maxLength = 120, maxLines = 2) => {
   return briefContent;
 };
 
-const PostCard = ({ post }) => {
+const PostCard = ({ post, commentCount }) => {
   const navigate = useNavigate();
 
   const authorDisplayName = post.user?.username || `User ID: ${post.user_id ? post.user_id.substring(0, 8) : 'N/A'}...`;
@@ -145,7 +145,7 @@ const PostCard = ({ post }) => {
       <div className="cardActions">
         <span className="actionItem">👍 {post.post_like || 0}</span>
         <span className="actionItem">👎 {post.post_dislike || 0}</span>
-        <span className="actionItem">💬 {post.comment_count || 0}</span>
+        <span className="actionItem">💬 {commentCount || post.comment_count || 0}</span>
       </div>
     </div>
   );
@@ -153,6 +153,7 @@ const PostCard = ({ post }) => {
 
 const HomePage = () => {
   const [posts, setPosts] = useState([]);
+  const [commentCounts, setCommentCounts] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -196,13 +197,41 @@ const HomePage = () => {
     }
   }, [searchTerm, selectedRegion]);
 
+  const fetchCommentCounts = useCallback(async (postIds) => {
+    if (!postIds || postIds.length === 0) return;
+    
+    try {
+      const counts = {};
+      for (const postId of postIds) {
+        const { count, error: countError } = await supabase
+          .from('comment')
+          .select('*', { count: 'exact', head: true })
+          .eq('post_id', postId);
+        
+        if (!countError) {
+          counts[postId] = count;
+        }
+      }
+      
+      setCommentCounts(counts);
+    } catch (err) {
+      console.error('Error in fetchCommentCounts:', err);
+    }
+  }, []);
+
   useEffect(() => {
     fetchPosts();
   }, [fetchPosts]);
 
+  useEffect(() => {
+    if (posts.length > 0) {
+      const postIds = posts.map(post => post.post_id);
+      fetchCommentCounts(postIds);
+    }
+  }, [posts, fetchCommentCounts]);
+
   const handleSearch = (e) => {
     e.preventDefault();
-    // fetchPosts(); // Not strictly necessary here as useEffect already listens to searchTerm
   };
 
   return (
@@ -246,7 +275,11 @@ const HomePage = () => {
         {!loading && !error && posts.length > 0 && (
           <div>
             {posts.map((post) => (
-              <PostCard key={post.post_id} post={post} />
+              <PostCard 
+                key={post.post_id} 
+                post={post} 
+                commentCount={commentCounts[post.post_id]}
+              />
             ))}
           </div>
         )}

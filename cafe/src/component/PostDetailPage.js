@@ -40,7 +40,7 @@ const getAllImageUrls = (post) => {
 // --- End Helper Functions ---
 
 
-const PostDetailPage = () => {
+const PostDetailPage = ({ checklogin, userData }) => {
   const { postId } = useParams();
   const [post, setPost] = useState(null);
   const [loadingPost, setLoadingPost] = useState(true);
@@ -51,28 +51,8 @@ const PostDetailPage = () => {
   // --- Comments State ---
   const [comments, setComments] = useState([]);
   const [loadingComments, setLoadingComments] = useState(true);
-  const [newCommentText, setNewCommentText] = useState(''); // Renamed from newComment for clarity
+  const [newCommentText, setNewCommentText] = useState('');
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
-  const [currentUser, setCurrentUser] = useState(null);
-
-  // Fetch current user session
-  useEffect(() => {
-    const getSession = async () => {
-        const { data: { session } } = await supabase.auth.getSession();
-        setCurrentUser(session?.user ?? null);
-    };
-    getSession();
-
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setCurrentUser(session?.user ?? null);
-      }
-    );
-    return () => {
-      authListener.subscription.unsubscribe();
-    };
-  }, []);
-
 
   // Fetch post details
   useEffect(() => {
@@ -116,7 +96,7 @@ const PostDetailPage = () => {
         .from('comment')
         .select('*')
         .eq('post_id', postId)
-        .order('created_at', { ascending: true });
+        // .order('created_at', { ascending: true });
 
       if (commentsError) throw commentsError;
       console.log('Comments data:', data); // Debug: log the retrieved comments
@@ -155,7 +135,6 @@ const PostDetailPage = () => {
 
 
   const handleVote = async (voteType) => {
-    // ... (handleVote logic for post likes/dislikes - unchanged from previous version)
     if (!post || isUpdatingVotes) return;
     setIsUpdatingVotes(true);
     const currentLikes = post.post_like || 0;
@@ -192,11 +171,24 @@ const PostDetailPage = () => {
 
   const handleSubmitComment = async (e) => {
     e.preventDefault();
-    if (!newCommentText.trim() || !currentUser || !postId) {
-      alert("Comment cannot be empty and you must be logged in.");
+    
+    if (!newCommentText.trim()) {
+      alert("Comment cannot be empty");
       return;
     }
+    
+    if (!checklogin || !userData) {
+      alert("You must be logged in to comment");
+      return;
+    }
+    
+    if (!postId) {
+      alert("Post ID is missing");
+      return;
+    }
+    
     setIsSubmittingComment(true);
+    console.log("Submitting comment with user:", userData);
 
     try {
       // First, insert the comment
@@ -204,27 +196,24 @@ const PostDetailPage = () => {
         .from('comment')
         .insert({
           post_id: postId,
-          user_id: currentUser.id,
+          user_id: userData.user_id,
           comment_detail: newCommentText.trim(),
           comment_like: 0,
           comment_dislike: 0
         })
-        .select()
-        .single();
+        .select();
 
       if (insertError) throw insertError;
+      console.log("Comment inserted:", newComment);
 
-      // Then fetch the user info separately
-      const { data: userData, error: userError } = await supabase
-        .from('user')
-        .select('username')
-        .eq('user_id', currentUser.id)
-        .single();
+      if (!Array.isArray(newComment) || newComment.length === 0) {
+        throw new Error("Comment was inserted but no data was returned");
+      }
 
-      // Combine the comment with user info
+      // Add the new comment to the current state
       const commentWithUser = {
-        ...newComment,
-        user: userError ? null : userData
+        ...newComment[0],
+        user: { username: userData.username || userData.email?.split('@')[0] || 'User' }
       };
 
       // Add to comments state
@@ -249,7 +238,7 @@ const PostDetailPage = () => {
       }
     } catch (err) {
       console.error('Error submitting comment:', err);
-      alert('Failed to submit comment. ' + err.message);
+      alert('Failed to submit comment: ' + (err.message || 'Unknown error'));
     } finally {
       setIsSubmittingComment(false);
     }
@@ -293,8 +282,11 @@ const PostDetailPage = () => {
       {/* --- Comments Section --- */}
       <div className="commentsSection">
         <h2 className="commentsTitle">Comments ({comments.length > 0 ? comments.length : (post.comment_count || 0)})</h2>
-        {currentUser ? (
+        
+        {/* Comment Form */}
+        {checklogin ? (
           <form onSubmit={handleSubmitComment} className="commentForm">
+            <p className="loggedInAs">Posting as: <strong>{userData?.username || 'User'}</strong></p>
             <textarea
               className="commentTextarea"
               value={newCommentText}
@@ -312,7 +304,10 @@ const PostDetailPage = () => {
             </button>
           </form>
         ) : (
-          <p>Please <Link to="/login">log in</Link> to post a comment.</p>
+          <div className="loginPrompt">
+            <p>Please <Link to="/login">log in</Link> to post a comment.</p>
+            <p className="loginNote">(Already logged in? Try refreshing the page.)</p>
+          </div>
         )}
 
         {loadingComments && <p>Loading comments...</p>}

@@ -152,6 +152,9 @@ const CreateReview = () => {
       post_title: title,
       post_detail: reviewText,
       post_region: cleanRegion,
+      comment_count: 0, // Initialize comment count to 0
+      post_like: 0,    // Initialize likes to 0
+      post_dislike: 0, // Initialize dislikes to 0
       // user_id: supabase.auth.user()?.id, // Example
     };
 
