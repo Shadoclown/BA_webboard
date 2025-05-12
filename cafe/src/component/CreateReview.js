@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import supabase from './connect'; // Make sure this path is correct
 import '../style/CreateReview.css'; // Import the CSS file
 
-const CreateReview = () => {
+const CreateReview = ({userData}) => {
   const [title, setTitle] = useState('');
   const [reviewText, setReviewText] = useState('');
   const [selectedRegion, setSelectedRegion] = useState(null);
@@ -11,6 +11,8 @@ const CreateReview = () => {
   const [uploading, setUploading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+
+  const user_id = userData.user_id;
 
   const regions = ['North', 'South', 'Central', 'West', 'East'];
   const MAX_FILE_SIZE_MB = 5;
@@ -153,6 +155,7 @@ const CreateReview = () => {
 
     // 2. Prepare review data
     const reviewData = {
+      user_id: user_id, 
       post_title: title,
       post_detail: reviewText,
       post_region: cleanRegion,
