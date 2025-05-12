@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import supabase from './connect'; // Make sure this path is correct
+import '../style/CreateReview.css'; // Import the CSS file
 
 const CreateReview = () => {
   const [title, setTitle] = useState('');
@@ -110,37 +111,40 @@ const CreateReview = () => {
         const fileExt = file.name.split('.').pop();
         // Add more uniqueness to filename to avoid collisions if multiple users upload simultaneously
         const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 10)}.${fileExt}`;
-        const filePath = `public/${fileName}`; // Path in bucket
+        // Simplified path - avoid using 'public/' prefix
+        const filePath = fileName;
 
-        const { error: uploadError } = await supabase.storage
-          .from('image') // YOUR_BUCKET_NAME
-          .upload(filePath, file, {
-            cacheControl: '3600',
-            upsert: false, // Important: false to avoid overwriting if a hash collision somehow occurs
-          });
+        try {
+          const { error: uploadError } = await supabase.storage
+            .from('image')
+            .upload(filePath, file, {
+              cacheControl: '3600',
+              upsert: false,
+            });
 
-        if (uploadError) {
-          console.error(`Image Upload Error for ${file.name}:`, uploadError);
-          // Throw an error to be caught by Promise.all
-          throw new Error(`Failed to upload ${file.name}: ${uploadError.message}`);
+          if (uploadError) {
+            console.error(`Image Upload Error for ${file.name}:`, uploadError);
+            throw new Error(`Failed to upload ${file.name}: ${uploadError.message}`);
+          }
+
+          const { data: urlData } = supabase.storage
+            .from('image')
+            .getPublicUrl(filePath);
+
+          if (!urlData || !urlData.publicUrl) {
+            throw new Error(`Image ${file.name} uploaded, but could not get its URL.`);
+          }
+          return urlData.publicUrl;
+        } catch (err) {
+          console.error('Unexpected upload error:', err);
+          throw err;
         }
-
-        const { data: urlData } = supabase.storage
-          .from('image') // YOUR_BUCKET_NAME
-          .getPublicUrl(filePath);
-
-        if (!urlData || !urlData.publicUrl) {
-          console.error(`Error getting public URL for ${file.name}`);
-          throw new Error(`Image ${file.name} uploaded, but could not get its URL.`);
-        }
-        return urlData.publicUrl;
       });
 
       try {
         const urls = await Promise.all(uploadPromises);
         uploadedImagePublicUrls.push(...urls);
       } catch (error) {
-        // Error from one of the promises in Promise.all
         setErrorMsg(error.message + ' Review not posted.');
         setUploading(false);
         return;
@@ -152,32 +156,55 @@ const CreateReview = () => {
       post_title: title,
       post_detail: reviewText,
       post_region: cleanRegion,
-      comment_count: 0, // Initialize comment count to 0
-      post_like: 0,    // Initialize likes to 0
-      post_dislike: 0, // Initialize dislikes to 0
-      // user_id: supabase.auth.user()?.id, // Example
+      post_like: 0,
+      post_dislike: 0,
+      // Don't include post_id field to avoid primary key conflicts
     };
 
     if (uploadedImagePublicUrls.length > 0) {
-      // IMPORTANT: Ensure 'post' table has a column like 'post_image_urls' (TEXT[] type)
       reviewData.post_image = uploadedImagePublicUrls;
     }
 
-    // 3. Insert review into the database
-    const { data: insertData, error: insertError } = await supabase
-      .from('post') // YOUR_TABLE_NAME for reviews
-      .insert([reviewData])
-      .select();
+    try {
+      // 3. Insert review into the database
+      const { data: insertData, error: insertError } = await supabase
+        .from('post')
+        .insert([reviewData])
+        .select();
 
-    setUploading(false);
+      setUploading(false);
 
-    if (insertError) {
-      console.error('Insert Error:', insertError);
-      setErrorMsg(`Failed to post review: ${insertError.message}. Check console. Possible issues: RLS, missing/mismatched columns (e.g., 'post_image_urls' not TEXT[]).`);
-    } else {
-      console.log('Inserted Review:', insertData);
-      setSuccessMsg('Review posted successfully!');
-      resetForm();
+      if (insertError) {
+        console.error('Insert Error:', insertError);
+        if (insertError.code === '23505') {
+          // This is a PostgreSQL unique constraint violation code
+          setErrorMsg('This post appears to be a duplicate. Please try with a different title or content.');
+          
+          // Better explanation of duplicate detection
+          if (insertError.details) {
+            console.log('Constraint violation details:', insertError.details);
+            
+            if (insertError.details.includes('post_title')) {
+              setErrorMsg('A post with this title already exists. Please use a different title.');
+            } else if (insertError.details.includes('post_detail')) {
+              setErrorMsg('A post with identical content already exists. Please modify your review text.');
+            } else {
+              // General duplicate case when we can't determine the exact constraint
+              setErrorMsg('Your post is similar to an existing one. Please make more substantial changes.');
+            }
+          }
+        } else {
+          setErrorMsg(`Failed to post review: ${insertError.message}. Check console.`);
+        }
+      } else {
+        console.log('Inserted Review:', insertData);
+        setSuccessMsg('Review posted successfully!');
+        resetForm();
+      }
+    } catch (error) {
+      console.error('Unexpected error:', error);
+      setErrorMsg(`An unexpected error occurred: ${error.message}`);
+      setUploading(false);
     }
   };
 
@@ -188,165 +215,21 @@ const CreateReview = () => {
     console.log('Form cancelled');
   };
 
-  const styles = {
-    container: { /* ... */ },
-    formCard: { /* ... */ },
-    heading: { /* ... */ },
-    label: { /* ... */ },
-    input: { /* ... */ },
-    textarea: { /* ... */ },
-    regionContainer: { /* ... */ },
-    regionButton: { /* ... */ },
-    selectedRegionButton: { /* ... */ },
-    buttonContainer: { /* ... */ },
-    cancelButton: { /* ... */ },
-    postButton: { /* ... */ },
-    imagePreviewContainer: { // Style for the container of multiple previews
-      display: 'flex',
-      flexWrap: 'wrap',
-      gap: '10px',
-      marginTop: '10px',
-      marginBottom: '20px',
-    },
-    imagePreview: {
-      width: '100px', // Fixed width for multiple previews
-      height: '100px',// Fixed height
-      border: '1px solid #ddd',
-      borderRadius: '4px',
-      objectFit: 'cover',
-    },
-    errorText: { /* ... */ },
-    successText: { /* ... */ },
-    // Re-add styles if they were removed in the prompt for brevity
-    // ... (your existing styles are good, keep them)
-    container: {
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'flex-start', // Align to top for longer forms
-        minHeight: 'calc(100vh - 100px)',
-        padding: '40px 20px', // More padding
-        backgroundColor: '#f0f2f5',
-      },
-      formCard: {
-        backgroundColor: '#ffffff',
-        padding: '40px',
-        borderRadius: '8px',
-        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-        width: '100%',
-        maxWidth: '700px',
-      },
-      heading: {
-        fontSize: '24px',
-        fontWeight: 'bold',
-        marginBottom: '30px',
-        color: '#333',
-        textAlign: 'center',
-      },
-      label: {
-        display: 'block',
-        fontSize: '14px',
-        fontWeight: 'bold',
-        marginBottom: '8px',
-        color: '#555',
-      },
-      input: {
-        width: '100%',
-        padding: '12px',
-        marginBottom: '25px',
-        border: '1px solid #ddd',
-        borderRadius: '4px',
-        boxSizing: 'border-box',
-        fontSize: '14px',
-      },
-      textarea: {
-        width: '100%',
-        padding: '12px',
-        marginBottom: '25px',
-        border: '1px solid #ddd',
-        borderRadius: '4px',
-        boxSizing: 'border-box',
-        fontSize: '14px',
-        minHeight: '120px',
-        resize: 'vertical',
-      },
-      regionContainer: {
-        display: 'flex',
-        gap: '10px', // Slightly reduced gap
-        marginBottom: '25px',
-        flexWrap: 'wrap',
-      },
-      regionButton: {
-        padding: '10px 15px',
-        border: '1px solid #ddd',
-        borderRadius: '4px',
-        backgroundColor: '#fff',
-        cursor: 'pointer',
-        fontSize: '14px',
-        color: '#555',
-        flex: '1 1 auto', // Allow buttons to grow and shrink
-        textAlign: 'center',
-      },
-      selectedRegionButton: {
-        backgroundColor: '#e0e0e0',
-        borderColor: '#ccc',
-        fontWeight: 'bold',
-        color: '#333',
-      },
-      buttonContainer: {
-        display: 'flex',
-        justifyContent: 'flex-end',
-        gap: '15px',
-        marginTop: '20px', // More space above buttons
-      },
-      cancelButton: {
-        padding: '12px 25px',
-        border: '1px solid #ccc',
-        borderRadius: '4px',
-        backgroundColor: '#f8f9fa',
-        cursor: 'pointer',
-        fontSize: '14px',
-        color: '#333',
-        fontWeight: '500',
-      },
-      postButton: {
-        padding: '12px 25px',
-        border: 'none',
-        borderRadius: '4px',
-        backgroundColor: '#f2c957', // Your theme color
-        color: '#675D50', // Your theme text color
-        cursor: 'pointer',
-        fontSize: '14px',
-        fontWeight: 'bold',
-      },
-      errorText: {
-          color: 'red',
-          marginBottom: '15px',
-          fontSize: '14px',
-          textAlign: 'center',
-      },
-      successText: {
-          color: 'green',
-          marginBottom: '15px',
-          fontSize: '14px',
-          textAlign: 'center',
-      }
-  };
-
   return (
-    <div style={styles.container}>
-      <div style={styles.formCard}>
-        <h2 style={styles.heading}>Create New Review</h2>
+    <div className="container">
+      <div className="formCard">
+        <h2 className="heading">Create New Review</h2>
 
-        {errorMsg && <p style={styles.errorText}>{errorMsg}</p>}
-        {successMsg && <p style={styles.successText}>{successMsg}</p>}
+        {errorMsg && <p className="errorText">{errorMsg}</p>}
+        {successMsg && <p className="successText">{successMsg}</p>}
 
         <form onSubmit={handleSubmit}>
           <div>
-            <label htmlFor="title" style={styles.label}>Title</label>
+            <label htmlFor="title" className="label">Title</label>
             <input
               type="text"
               id="title"
-              style={styles.input}
+              className="input"
               placeholder="E.g. Amazing Italian Restaurant in Downtown"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
@@ -354,16 +237,13 @@ const CreateReview = () => {
           </div>
 
           <div>
-            <label style={styles.label}>Region</label>
-            <div style={styles.regionContainer}>
+            <label className="label">Region</label>
+            <div className="regionContainer">
               {regions.map((region, index) => (
                 <button
                   key={index}
                   type="button"
-                  style={{
-                    ...styles.regionButton,
-                    ...(selectedRegion === region + index && styles.selectedRegionButton),
-                  }}
+                  className={`regionButton ${selectedRegion === region + index ? 'selectedRegionButton' : ''}`}
                   onClick={() => {
                     setSelectedRegion(region + index);
                     setErrorMsg('');
@@ -376,10 +256,10 @@ const CreateReview = () => {
           </div>
 
           <div>
-            <label htmlFor="review" style={styles.label}>Review</label>
+            <label htmlFor="review" className="label">Review</label>
             <textarea
               id="review"
-              style={styles.textarea}
+              className="textarea"
               placeholder="Share your experience..."
               value={reviewText}
               onChange={(e) => setReviewText(e.target.value)}
@@ -387,36 +267,36 @@ const CreateReview = () => {
           </div>
 
           <div>
-            <label htmlFor="images" style={styles.label}>
+            <label htmlFor="images" className="label">
               Upload Images (Optional, max {MAX_FILE_SIZE_MB}MB each, {MAX_TOTAL_FILES} files max)
             </label>
             <input
               type="file"
-              id="images" // Changed id for clarity
+              id="images"
               accept="image/png, image/jpeg, image/gif"
-              multiple // Added multiple attribute
+              multiple
               onChange={handleImageChange}
-              style={styles.input}
+              className="input"
               disabled={uploading}
             />
             {imagePreviewUrls.length > 0 && (
-              <div style={styles.imagePreviewContainer}>
+              <div className="imagePreviewContainer">
                 {imagePreviewUrls.map((url, index) => (
                   <img
-                    key={index} // Using index as key; for more stability, use a unique ID if files have one
+                    key={index}
                     src={url}
                     alt={`Preview ${index + 1}`}
-                    style={styles.imagePreview}
+                    className="imagePreview"
                   />
                 ))}
               </div>
             )}
           </div>
 
-          <div style={styles.buttonContainer}>
+          <div className="buttonContainer">
             <button
               type="button"
-              style={styles.cancelButton}
+              className="cancelButton"
               onClick={handleCancel}
               disabled={uploading}
             >
@@ -424,7 +304,7 @@ const CreateReview = () => {
             </button>
             <button
               type="submit"
-              style={styles.postButton}
+              className="postButton"
               disabled={uploading}
             >
               {uploading ? 'Posting...' : 'Post Review'}

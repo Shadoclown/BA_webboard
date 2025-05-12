@@ -12,6 +12,7 @@ import Regions from './component/Regions';
 import ExplorePage from './component/ExplorePage';
 import HomePage from './component/Home';
 import PostDetailPage from './component/PostDetailPage'; // Import PostDetailPage
+import CreateReview from './component/CreateReview';
 
 function App() {
   const [checklogin, setchecklogin] = useState(false);
@@ -67,6 +68,7 @@ function App() {
           <Route path="/profile" element={<ProfilePage userData={User} />} /> 
           <Route path="/explore" element={<ExplorePage />} />
           <Route path="/category/:id" element={<Regions />} />
+          <Route path="/create-post" element={<CreateReview checklogin={checklogin} userData={User}/>} />
         </Routes>
       </BrowserRouter>
     </div>
