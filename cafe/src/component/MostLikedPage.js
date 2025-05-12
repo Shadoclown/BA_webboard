@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import supabase from './connect';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import '../style/MostLikedPage.css';
 
 const MostLikedPage = () => {
@@ -119,18 +119,24 @@ const MostLikedPage = () => {
           
           <div className="top-10-list">
             {topPosts.slice(0, 10).map((post, index) => (
-              <div key={post.post_id} className="top-10-item">
-                <div className="rank">{index + 1}</div>
-                <div className="post-details">
-                  <h3 className="post-title">{post.post_title || 'Untitled Post'}</h3>
-                  <p className="post-meta">
-                    by {post.user?.username || 'Anonymous'} • {post.post_region || 'Unknown Region'}
-                  </p>
+              <Link 
+                to={`/post/${post.post_id}`}
+                key={post.post_id}
+                className="top-10-link"
+              >
+                <div className="top-10-item">
+                  <div className="rank">{index + 1}</div>
+                  <div className="post-details">
+                    <h3 className="post-title">{post.post_title || 'Untitled Post'}</h3>
+                    <p className="post-meta">
+                      by {post.user?.username || 'Anonymous'} • {post.post_region || 'Unknown Region'}
+                    </p>
+                  </div>
+                  <div className="like-section">
+                    <span className="like-count">{post.post_like || 0}k</span>
+                  </div>
                 </div>
-                <div className="like-section">
-                  <span className="like-count">{post.post_like || 0}k</span>
-                </div>
-              </div>
+              </Link>
             ))}
           </div>
         </>

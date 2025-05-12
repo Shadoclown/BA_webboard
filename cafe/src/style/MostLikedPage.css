@@ -284,6 +284,12 @@
   gap: 15px;
 }
 
+.top-10-link {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
 .top-10-item {
   display: flex;
   align-items: center;
@@ -293,12 +299,17 @@
   border-radius: 10px;
   background-color: white;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .top-10-item:hover {
   transform: translateY(-5px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.top-10-link:hover .top-10-item {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
 }
 
 .rank {
