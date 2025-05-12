@@ -1,23 +1,20 @@
 // ProfilePage.jsx
 import React, { useState, useEffect } from 'react';
 import supabase from './connect';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import '../style/ProfilePage.css';
 
 const ProfilePage = ({ userData }) => {
   const navigate = useNavigate();
 
-  const userId = userData.user_id;
-  const username = userData.username;
-  const email = userData.email;
+  const userId = userData?.user_id || userData?.userId;
+  const username = userData?.username;
+  const email = userData?.email;
 
-  const [loading, setLoading] = useState(false);
-
-  
+  const [loading, setLoading] = useState(true);
   const [posts, setPosts] = useState([]);
-  
+
   useEffect(() => {
-    // Check for authenticated user
     const fetchUserData = async () => {
       try {
         setLoading(true);
@@ -28,23 +25,15 @@ const ProfilePage = ({ userData }) => {
           return;
         }
         
-        // Get user profile data
-        const { data: data, error: userError } = await supabase
-          .from('users')
-          .select('*')
-          .eq('user_id', userId)
-          .single();
-          
-        if (userError && userError.code !== 'PGRST116') {
-          throw userError;
-        }
-        
         // Get user's posts
         const { data: postsData, error: postsError } = await supabase
-          .from('posts')
-          .select('*')
+          .from('post')
+          .select(`
+            *,
+            user:user_id (username)
+          `)
           .eq('user_id', userId)
-          .order('post_id', { ascending: false });
+          .order('created_at', { ascending: false });
           
         if (postsError) throw postsError;
         
@@ -57,68 +46,71 @@ const ProfilePage = ({ userData }) => {
     };
     
     fetchUserData();
-  }, [userId, email]);
+  }, [userId]);
   
-  const handleCreatePost = () => {
-    // Navigate to create post page
-    window.location.href = '/create-post';
+  const formatDate = (dateString) => {
+    if (!dateString) return 'Unknown date';
+    const date = new Date(dateString);
+    return `${date.toLocaleString('default', { month: 'short' })} ${date.getDate()}`;
   };
-  
-  const handleLogout = async () => {
-    try {
-      await supabase.auth.signOut();
-      window.location.href = '/login';
-    } catch (error) {
-      console.error('Error signing out:', error);
-    }
-  };
-  
   
   return (
-    <div className="profile-page">
-      {/* Navigation */}
-      
-      {/* Main Content */}
-      <main className="profile-content">
-        {loading ? (
-          <div className="loading">Loading...</div>
-        ) : (
-          <>
-            <div className="user-profile">
-              <div className="avatar-container">
-                <div className="avatar"></div>
-              </div>
-              <h2 className="profile-username">{username}</h2>
-            </div>
+    <div className="profile-container">
+      {loading ? (
+        <div className="profile-loading">Loading...</div>
+      ) : (
+        <>
+          <div className="profile-header">
+            <div className="profile-avatar"></div>
+            <h1 className="profile-username">{username}</h1>
+          </div>
+          
+          <div className="profile-content">
+            <h2 className="posts-heading">Your Posts</h2>
             
-            <div className="posts-section">
-              <h3 className="section-title">Your Posts</h3>
-              
-              {posts.length === 0 ? (
-                <p className="no-posts-message">You haven't posted yet!</p>
-              ) : (
-                <div className="posts-grid">
-                  {posts.map(post => (
-                    <div key={post.post_id} className="post-card">
-                      <div className="post-image">
-                        {post.post_image && (
-                          <img src={post.post_image} alt={post.post_title} />
-                        )}
-                      </div>
-                      <h4 className="post-title">{post.post_title}</h4>
-                      <p className="post-region">{post.post_region}</p>
-                      <div className="post-stats">
-                        <span className="post-likes">👍 {post.post_like || 0}</span>
-                        <span className="post-dislikes">👎 {post.post_dislike || 0}</span>
+            {posts.length === 0 ? (
+              <p className="no-posts">You haven't posted yet!</p>
+            ) : (
+              <div className="posts-grid">
+                {posts.map(post => (
+                  <div 
+                    key={post.post_id} 
+                    className="post-card"
+                    onClick={() => navigate(`/post/${post.post_id}`)}
+                  >
+                    <div className="post-header">
+                      <div className="post-avatar"></div>
+                      <div className="post-info">
+                        <div className="post-title">
+                          {post.post_title || 'Untitled Post'}
+                        </div>
+                        <div className="post-date">
+                          {formatDate(post.created_at)}
+                        </div>
                       </div>
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </>
-        )}
-      </main>
+                    
+                    <div className="post-body">
+                      <p className="post-content">
+                        {post.post_detail?.substring(0, 80) || 'No description'}
+                        {post.post_detail?.length > 80 ? '...' : ''}
+                      </p>
+                    </div>
+                    
+                    <div className="post-footer">
+                      <div className="post-region">{post.post_region || 'Unknown'}</div>
+                      <div className="post-likes">
+                        <span className="like-icon">👍</span>
+                        <span className="like-count">{post.post_like || 0}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </>
+      )}
     </div>
   );
 };
