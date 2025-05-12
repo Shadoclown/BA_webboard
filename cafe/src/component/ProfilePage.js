@@ -84,9 +84,7 @@ const ProfilePage = ({ userData }) => {
                         <div className="post-title">
                           {post.post_title || 'Untitled Post'}
                         </div>
-                        <div className="post-date">
-                          {formatDate(post.created_at)}
-                        </div>
+                        
                       </div>
                     </div>
                     
