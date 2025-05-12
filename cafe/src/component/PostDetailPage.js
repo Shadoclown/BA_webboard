@@ -81,6 +81,8 @@ const PostDetailPage = ({ checklogin, userData }) => {
   const [loadingComments, setLoadingComments] = useState(true);
   const [newCommentText, setNewCommentText] = useState('');
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+  const [commentVotes, setCommentVotes] = useState({});
+  const [isUpdatingCommentVote, setIsUpdatingCommentVote] = useState(false);
   
   // --- Related Posts State ---
   const [relatedPosts, setRelatedPosts] = useState([]);
@@ -196,6 +198,20 @@ const PostDetailPage = ({ checklogin, userData }) => {
     fetchComments();
   }, [fetchComments]);
 
+  // Load saved comment votes from localStorage
+  useEffect(() => {
+    if (postId) {
+      const savedCommentVotes = localStorage.getItem(`post-${postId}-comment-votes`);
+      if (savedCommentVotes) {
+        try {
+          setCommentVotes(JSON.parse(savedCommentVotes));
+        } catch (e) {
+          console.error('Error parsing saved comment votes:', e);
+        }
+      }
+    }
+  }, [postId]);
+
   const handleVote = async (voteType) => {
     if (!post || isUpdatingVotes) return;
     setIsUpdatingVotes(true);
@@ -255,6 +271,110 @@ const PostDetailPage = ({ checklogin, userData }) => {
       alert(`Failed to update vote. Please try again.`);
     } finally { 
       setIsUpdatingVotes(false); 
+    }
+  };
+
+  const handleCommentVote = async (commentId, voteType) => {
+    if (!checklogin || isUpdatingCommentVote) {
+      if (!checklogin) alert("You must be logged in to vote");
+      return;
+    }
+    
+    setIsUpdatingCommentVote(true);
+    
+    // Find the comment we're voting on
+    const comment = comments.find(c => c.comment_id === commentId);
+    if (!comment) {
+      setIsUpdatingCommentVote(false);
+      return;
+    }
+    
+    // Get current vote counts
+    const currentLikes = comment.comment_like || 0;
+    const currentDislikes = comment.comment_dislike || 0;
+    
+    // Get user's current vote on this comment
+    const currentVote = commentVotes[commentId] || { liked: false, disliked: false };
+    
+    // Calculate new vote state
+    let newLikes = currentLikes;
+    let newDislikes = currentDislikes;
+    let newVoteState = { ...currentVote };
+    
+    if (voteType === 'like') {
+      if (currentVote.liked) {
+        // User is unliking
+        newLikes = Math.max(0, currentLikes - 1);
+        newVoteState.liked = false;
+      } else {
+        // User is liking
+        newLikes = currentLikes + 1;
+        newVoteState.liked = true;
+        // If they had disliked before, remove that dislike
+        if (currentVote.disliked) {
+          newDislikes = Math.max(0, currentDislikes - 1);
+          newVoteState.disliked = false;
+        }
+      }
+    } else if (voteType === 'dislike') {
+      if (currentVote.disliked) {
+        // User is undisliking
+        newDislikes = Math.max(0, currentDislikes - 1);
+        newVoteState.disliked = false;
+      } else {
+        // User is disliking
+        newDislikes = currentDislikes + 1;
+        newVoteState.disliked = true;
+        // If they had liked before, remove that like
+        if (currentVote.liked) {
+          newLikes = Math.max(0, currentLikes - 1);
+          newVoteState.liked = false;
+        }
+      }
+    }
+    
+    // Save original state for rollback if needed
+    const originalComments = [...comments];
+    const originalCommentVotes = { ...commentVotes };
+    
+    // Update UI optimistically
+    setComments(comments.map(c => 
+      c.comment_id === commentId 
+        ? { ...c, comment_like: newLikes, comment_dislike: newDislikes }
+        : c
+    ));
+    
+    setCommentVotes({
+      ...commentVotes,
+      [commentId]: newVoteState
+    });
+    
+    // Save to localStorage
+    localStorage.setItem(`post-${postId}-comment-votes`, JSON.stringify({
+      ...commentVotes,
+      [commentId]: newVoteState
+    }));
+    
+    try {
+      // Update the database
+      const { error: updateError } = await supabase
+        .from('comment')
+        .update({
+          comment_like: newLikes,
+          comment_dislike: newDislikes
+        })
+        .eq('comment_id', commentId);
+        
+      if (updateError) throw updateError;
+    } catch (err) {
+      console.error('Error updating comment vote:', err);
+      // Roll back to original state
+      setComments(originalComments);
+      setCommentVotes(originalCommentVotes);
+      localStorage.setItem(`post-${postId}-comment-votes`, JSON.stringify(originalCommentVotes));
+      alert('Failed to update vote. Please try again.');
+    } finally {
+      setIsUpdatingCommentVote(false);
     }
   };
 
@@ -348,9 +468,6 @@ const PostDetailPage = ({ checklogin, userData }) => {
 
   return (
     <div className="pageContainer">
-      <Link to="/" className="backLink">
-        Back to Post
-      </Link>
       
       <div className="contentLayout">
         {/* Main Content Column */}
@@ -459,8 +576,20 @@ const PostDetailPage = ({ checklogin, userData }) => {
                     </p>
                     <p className="commentText">{comment.comment_detail}</p>
                     <div className="commentActions">
-                      <span className="commentActionItem">👍 {comment.comment_like || 0}</span>
-                      <span className="commentActionItem">👎 {comment.comment_dislike || 0}</span>
+                      <button 
+                        className={`commentActionButton ${commentVotes[comment.comment_id]?.liked ? 'active' : ''}`}
+                        onClick={() => handleCommentVote(comment.comment_id, 'like')}
+                        disabled={isUpdatingCommentVote || !checklogin}
+                      >
+                        👍 {comment.comment_like || 0}
+                      </button>
+                      <button 
+                        className={`commentActionButton ${commentVotes[comment.comment_id]?.disliked ? 'active' : ''}`}
+                        onClick={() => handleCommentVote(comment.comment_id, 'dislike')}
+                        disabled={isUpdatingCommentVote || !checklogin}
+                      >
+                        👎 {comment.comment_dislike || 0}
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -499,13 +628,6 @@ const PostDetailPage = ({ checklogin, userData }) => {
                     </p>
                   </div>
                 ))}
-                
-                <Link 
-                  to={`/region/${post.post_region}`} 
-                  className="viewAllLink"
-                >
-                  View All {post.post_region} Reviews
-                </Link>
               </>
             ) : (
               <p>No related posts found.</p>
