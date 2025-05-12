@@ -45,17 +45,6 @@ const ForYouPage = () => {
     }
   };
 
-  const handleTabClick = (tabName) => {
-    setActiveTab(tabName);
-    if (tabName === 'For You') {
-      // Stay on current page
-    } else if (tabName === 'Most Liked') {
-      navigate('/most-like');
-    } else if (tabName === 'Top 5') {
-      navigate('/top-5');
-    }
-  };
-
   const handleLike = async (e, postId) => {
     // Stop the event from bubbling up to the parent (Link)
     e.stopPropagation();
@@ -123,7 +112,9 @@ const ForYouPage = () => {
             >
               <div className="post-card">
                 <div className="post-header">
-                  <div className="user-avatar"></div>
+                  <div className="user-avatar">
+                    {post.user?.username ? post.user.username.charAt(0).toUpperCase() : ''}
+                  </div>
                   <div className="post-meta">
                     <div className="username">{post.user?.username || 'Anonymous'}</div>
                     <div className="post-date">

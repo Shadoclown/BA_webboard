@@ -100,7 +100,9 @@ const ProfilePage = ({ userData }) => {
       ) : (
         <>
           <div className="profile-header">
-            <div className="profile-avatar"></div>
+            <div className="profile-avatar">
+              {username ? username.charAt(0).toUpperCase() : ''}
+            </div>
             <h1 className="profile-username">{username}</h1>
           </div>
           
@@ -117,7 +119,6 @@ const ProfilePage = ({ userData }) => {
                     className="post-card"
                   >
                     <div className="post-header">
-                      <div className="post-avatar"></div>
                       <div className="post-info">
                         <div className="post-title">
                           {post.post_title || 'Untitled Post'}
