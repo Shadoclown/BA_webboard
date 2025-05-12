@@ -18,33 +18,6 @@ function App() {
   const [checklogin, setchecklogin] = useState(false);
   const [User, setUser] = useState({});
 
-  // Add effect to check session on app load
-  useEffect(() => {
-    const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session && session.user) {
-        console.log("Found existing session:", session.user);
-        
-        // Get user data from your user table
-        const { data: userData, error } = await supabase
-          .from('user')
-          .select('*')
-          .eq('user_id', session.user.id)
-          .single();
-          
-        if (!error && userData) {
-          console.log("User data retrieved:", userData);
-          setchecklogin(true);
-          setUser(userData);
-        } else {
-          console.error("Error getting user data:", error);
-        }
-      }
-    };
-    
-    checkSession();
-  }, []);
-
   const handleLogin = (userData) => {
     setchecklogin(true);
     setUser(userData);

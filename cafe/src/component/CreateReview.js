@@ -6,75 +6,87 @@ const CreateReview = ({userData}) => {
   const [title, setTitle] = useState('');
   const [reviewText, setReviewText] = useState('');
   const [selectedRegion, setSelectedRegion] = useState(null);
-  const [imageFiles, setImageFiles] = useState([]); // Changed to array
-  const [imagePreviewUrls, setImagePreviewUrls] = useState([]); // Changed to array
+  const [imageFiles, setImageFiles] = useState([]);
+  const [imagePreviewUrls, setImagePreviewUrls] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+  const [uploadProgress, setUploadProgress] = useState({});
 
-  const user_id = userData.user_id;
+  console.log("CreateReview received userData:", userData);
+  const user_id = userData?.user_id || userData?.id || (userData && Object.keys(userData).length > 0 ? userData[Object.keys(userData)[0]] : null);
+  console.log("Using user_id:", user_id);
+
+  useEffect(() => {
+    if (!user_id && process.env.NODE_ENV === 'development') {
+      console.warn('User data or user_id is missing in CreateReview component. Check how userData is passed.');
+      console.warn('Available userData:', userData);
+    }
+  }, [user_id, userData]);
 
   const regions = ['North', 'South', 'Central', 'West', 'East'];
   const MAX_FILE_SIZE_MB = 5;
-  const MAX_TOTAL_FILES = 5; // Optional: Limit total number of files
+  const MAX_TOTAL_FILES = 5;
+  const MAX_TOTAL_SIZE_MB = 20;
 
   useEffect(() => {
-    // Clean up object URLs for image previews
     return () => {
       imagePreviewUrls.forEach(url => URL.revokeObjectURL(url));
     };
-  }, [imagePreviewUrls]); // Dependency on the array itself
+  }, [imagePreviewUrls]);
 
   const handleImageChange = (e) => {
     setErrorMsg('');
     setSuccessMsg('');
 
     const files = e.target.files ? Array.from(e.target.files) : [];
+    console.log(`Selected ${files.length} files:`, files);
 
     if (!files.length) {
-      // Clear existing if no new files are chosen (e.g., user cancels file dialog)
-      // Or, you might want to append if that's the desired UX.
-      // For simplicity, let's replace.
       imagePreviewUrls.forEach(url => URL.revokeObjectURL(url));
       setImageFiles([]);
       setImagePreviewUrls([]);
       return;
     }
 
-    // Optional: Limit total number of files
     if (files.length > MAX_TOTAL_FILES) {
         setErrorMsg(`You can upload a maximum of ${MAX_TOTAL_FILES} images.`);
-        e.target.value = null; // Reset file input
+        e.target.value = null;
         return;
     }
 
     const newImageFiles = [];
     const newPreviewUrls = [];
     let validationError = false;
+    let totalSize = 0;
 
     for (const file of files) {
+      totalSize += file.size;
       if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
         setErrorMsg(`Image "${file.name}" exceeds ${MAX_FILE_SIZE_MB}MB limit.`);
         validationError = true;
-        break; // Stop processing further files
+        break;
       }
       newImageFiles.push(file);
     }
 
+    if (totalSize > MAX_TOTAL_SIZE_MB * 1024 * 1024) {
+      setErrorMsg(`Total size of all images exceeds ${MAX_TOTAL_SIZE_MB}MB limit.`);
+      validationError = true;
+    }
+
     if (validationError) {
-      // Don't set any files if one is invalid
-      imagePreviewUrls.forEach(url => URL.revokeObjectURL(url)); // Revoke any previous previews
+      imagePreviewUrls.forEach(url => URL.revokeObjectURL(url));
       setImageFiles([]);
       setImagePreviewUrls([]);
-      e.target.value = null; // Reset file input
+      e.target.value = null;
       return;
     }
 
-    // Revoke old URLs before creating new ones
     imagePreviewUrls.forEach(url => URL.revokeObjectURL(url));
-
-    // Create new preview URLs
     newImageFiles.forEach(file => newPreviewUrls.push(URL.createObjectURL(file)));
+
+    console.log(`Created ${newPreviewUrls.length} preview URLs`);
 
     setImageFiles(newImageFiles);
     setImagePreviewUrls(newPreviewUrls);
@@ -85,10 +97,9 @@ const CreateReview = ({userData}) => {
     setReviewText('');
     setSelectedRegion(null);
     setImageFiles([]);
-    imagePreviewUrls.forEach(url => URL.revokeObjectURL(url)); // Clean up
+    imagePreviewUrls.forEach(url => URL.revokeObjectURL(url));
     setImagePreviewUrls([]);
-    // Reset file input visually
-    const fileInput = document.getElementById('images'); // Note ID change if you change it
+    const fileInput = document.getElementById('images');
     if (fileInput) fileInput.value = null;
   };
 
@@ -97,6 +108,13 @@ const CreateReview = ({userData}) => {
     setUploading(true);
     setErrorMsg('');
     setSuccessMsg('');
+    setUploadProgress({});
+
+    if (!user_id) {
+      setErrorMsg('You must be logged in to post a review. Please log in and try again.');
+      setUploading(false);
+      return;
+    }
 
     if (!title || !reviewText || !selectedRegion) {
       setErrorMsg('Please fill in Title, Review, and select a Region.');
@@ -107,22 +125,40 @@ const CreateReview = ({userData}) => {
     const cleanRegion = selectedRegion?.replace(/[0-9]/g, '');
     const uploadedImagePublicUrls = [];
 
-    // 1. Upload images if selected
     if (imageFiles.length > 0) {
-      const uploadPromises = imageFiles.map(async (file) => {
+      console.log(`Preparing to upload ${imageFiles.length} images`);
+
+      const initialProgress = {};
+      imageFiles.forEach((file, index) => {
+        initialProgress[index] = 0;
+      });
+      setUploadProgress(initialProgress);
+
+      const uploadPromises = imageFiles.map(async (file, index) => {
         const fileExt = file.name.split('.').pop();
-        // Add more uniqueness to filename to avoid collisions if multiple users upload simultaneously
-        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 10)}.${fileExt}`;
-        // Simplified path - avoid using 'public/' prefix
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 10)}-${index}.${fileExt}`;
         const filePath = fileName;
 
+        console.log(`Starting upload for file ${index}: ${file.name}`);
+
         try {
+          const updateProgress = (progress) => {
+            setUploadProgress(prev => ({
+              ...prev,
+              [index]: progress
+            }));
+          };
+          
+          updateProgress(10);
+
           const { error: uploadError } = await supabase.storage
             .from('image')
             .upload(filePath, file, {
               cacheControl: '3600',
               upsert: false,
             });
+
+          updateProgress(80);
 
           if (uploadError) {
             console.error(`Image Upload Error for ${file.name}:`, uploadError);
@@ -133,9 +169,13 @@ const CreateReview = ({userData}) => {
             .from('image')
             .getPublicUrl(filePath);
 
+          updateProgress(100);
+
           if (!urlData || !urlData.publicUrl) {
             throw new Error(`Image ${file.name} uploaded, but could not get its URL.`);
           }
+          
+          console.log(`Successfully uploaded file ${index}: ${urlData.publicUrl}`);
           return urlData.publicUrl;
         } catch (err) {
           console.error('Unexpected upload error:', err);
@@ -145,6 +185,7 @@ const CreateReview = ({userData}) => {
 
       try {
         const urls = await Promise.all(uploadPromises);
+        console.log(`All uploads complete. Got ${urls.length} URLs:`, urls);
         uploadedImagePublicUrls.push(...urls);
       } catch (error) {
         setErrorMsg(error.message + ' Review not posted.');
@@ -153,23 +194,21 @@ const CreateReview = ({userData}) => {
       }
     }
 
-    // 2. Prepare review data
     const reviewData = {
-      user_id: user_id, 
+      user_id: user_id,
       post_title: title,
       post_detail: reviewText,
       post_region: cleanRegion,
       post_like: 0,
       post_dislike: 0,
-      // Don't include post_id field to avoid primary key conflicts
     };
 
     if (uploadedImagePublicUrls.length > 0) {
       reviewData.post_image = uploadedImagePublicUrls;
+      console.log("Image URLs to be saved:", uploadedImagePublicUrls);
     }
 
     try {
-      // 3. Insert review into the database
       const { data: insertData, error: insertError } = await supabase
         .from('post')
         .insert([reviewData])
@@ -180,19 +219,14 @@ const CreateReview = ({userData}) => {
       if (insertError) {
         console.error('Insert Error:', insertError);
         if (insertError.code === '23505') {
-          // This is a PostgreSQL unique constraint violation code
           setErrorMsg('This post appears to be a duplicate. Please try with a different title or content.');
-          
-          // Better explanation of duplicate detection
           if (insertError.details) {
             console.log('Constraint violation details:', insertError.details);
-            
             if (insertError.details.includes('post_title')) {
               setErrorMsg('A post with this title already exists. Please use a different title.');
             } else if (insertError.details.includes('post_detail')) {
               setErrorMsg('A post with identical content already exists. Please modify your review text.');
             } else {
-              // General duplicate case when we can't determine the exact constraint
               setErrorMsg('Your post is similar to an existing one. Please make more substantial changes.');
             }
           }
@@ -223,6 +257,9 @@ const CreateReview = ({userData}) => {
       <div className="formCard">
         <h2 className="heading">Create New Review</h2>
 
+        {!user_id && (
+          <p className="errorText">You must be logged in to create a review.</p>
+        )}
         {errorMsg && <p className="errorText">{errorMsg}</p>}
         {successMsg && <p className="successText">{successMsg}</p>}
 
@@ -282,15 +319,86 @@ const CreateReview = ({userData}) => {
               className="input"
               disabled={uploading}
             />
+            
             {imagePreviewUrls.length > 0 && (
-              <div className="imagePreviewContainer">
+              <div 
+                className="imagePreviewContainer"
+                style={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: '10px',
+                  marginTop: '10px'
+                }}
+              >
                 {imagePreviewUrls.map((url, index) => (
-                  <img
-                    key={index}
-                    src={url}
-                    alt={`Preview ${index + 1}`}
-                    className="imagePreview"
-                  />
+                  <div 
+                    key={index} 
+                    className="imagePreviewWrapper"
+                    style={{
+                      position: 'relative',
+                      width: '100px',
+                      height: '100px',
+                      border: '1px solid #ddd',
+                      borderRadius: '4px',
+                      overflow: 'hidden'
+                    }}
+                  >
+                    <img
+                      src={url}
+                      alt={`Preview ${index + 1}`}
+                      className="imagePreview"
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover'
+                      }}
+                    />
+                    {uploading && uploadProgress[index] !== undefined && (
+                      <div className="uploadProgressOverlay">
+                        <div 
+                          className="uploadProgressBar" 
+                          style={{width: `${uploadProgress[index]}%`}}
+                        ></div>
+                        <span className="uploadProgressText">
+                          {uploadProgress[index]}%
+                        </span>
+                      </div>
+                    )}
+                    {!uploading && (
+                      <button
+                        type="button"
+                        className="removeImageButton"
+                        style={{
+                          position: 'absolute',
+                          top: '2px',
+                          right: '2px',
+                          background: 'rgba(0,0,0,0.5)',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '50%',
+                          width: '20px',
+                          height: '20px',
+                          cursor: 'pointer',
+                          fontSize: '12px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          padding: 0
+                        }}
+                        onClick={() => {
+                          const newFiles = [...imageFiles];
+                          const newUrls = [...imagePreviewUrls];
+                          URL.revokeObjectURL(newUrls[index]);
+                          newFiles.splice(index, 1);
+                          newUrls.splice(index, 1);
+                          setImageFiles(newFiles);
+                          setImagePreviewUrls(newUrls);
+                        }}
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
                 ))}
               </div>
             )}
@@ -301,14 +409,14 @@ const CreateReview = ({userData}) => {
               type="button"
               className="cancelButton"
               onClick={handleCancel}
-              disabled={uploading}
+              disabled={uploading || !user_id}
             >
               Cancel
             </button>
             <button
               type="submit"
               className="postButton"
-              disabled={uploading}
+              disabled={uploading || !user_id}
             >
               {uploading ? 'Posting...' : 'Post Review'}
             </button>
